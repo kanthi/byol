@@ -1,0 +1,2385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forge Linux — Build Your Own Distro (2026)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0d0f12;
+    --bg2:       #13161c;
+    --bg3:       #1a1e27;
+    --border:    #252a35;
+    --text:      #c8d0e0;
+    --muted:     #5a6275;
+    --heading:   #e8edf5;
+    --green:     #4ade80;
+    --amber:     #fbbf24;
+    --blue:      #60a5fa;
+    --red:       #f87171;
+    --purple:    #a78bfa;
+    --cyan:      #22d3ee;
+    --sidebar-w: 280px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.75;
+    display: flex;
+  }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+    padding-bottom: 40px;
+  }
+
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-track { background: var(--bg2); }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-logo .logo-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--green);
+    text-transform: uppercase;
+  }
+  .sidebar-logo .logo-sub {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--heading);
+    line-height: 1.2;
+    margin-top: 4px;
+  }
+  .sidebar-logo .edition-badge {
+    display: inline-block;
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: var(--green);
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .nav-section {
+    padding: 0 12px;
+    margin-bottom: 4px;
+  }
+  .nav-section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 12px 8px 4px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .nav-item:hover, .nav-item.active {
+    background: var(--bg3);
+    color: var(--heading);
+  }
+  .nav-item.active { color: var(--green); }
+  .nav-num {
+    font-size: 10px;
+    color: var(--border);
+    min-width: 20px;
+    font-weight: 700;
+  }
+  .nav-item.active .nav-num { color: var(--green); opacity: 0.6; }
+
+  /* ── MAIN ── */
+  #main {
+    flex: 1;
+    max-width: 860px;
+    padding: 60px 64px;
+    min-width: 0;
+  }
+
+  /* Hero */
+  .hero {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 48px;
+    margin-bottom: 64px;
+  }
+  .hero-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 52px;
+    font-weight: 800;
+    color: var(--heading);
+    line-height: 1.05;
+    margin-bottom: 20px;
+  }
+  .hero h1 span { color: var(--green); }
+  .hero-desc {
+    font-size: 18px;
+    color: var(--text);
+    max-width: 600px;
+    margin-bottom: 32px;
+    font-style: italic;
+    color: #8a93a8;
+  }
+  .meta-grid {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .meta-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .meta-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--amber);
+    font-weight: 500;
+  }
+
+  /* Sections */
+  .chapter {
+    margin-bottom: 80px;
+    padding-bottom: 80px;
+    border-bottom: 1px solid var(--border);
+  }
+  .chapter:last-child { border-bottom: none; }
+
+  .chapter-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--heading);
+    margin-bottom: 24px;
+    line-height: 1.15;
+  }
+  h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--heading);
+    margin-top: 40px;
+    margin-bottom: 14px;
+  }
+  h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
+  p { margin-bottom: 16px; }
+
+  /* Code */
+  pre {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    border-radius: 0 8px 8px 0;
+    padding: 20px 24px;
+    overflow-x: auto;
+    margin: 20px 0;
+    position: relative;
+  }
+  pre code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #c8d0e0;
+  }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--cyan);
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* Syntax colors inside pre */
+  .c-comment { color: var(--muted); font-style: italic; }
+  .c-cmd     { color: var(--green); }
+  .c-flag    { color: var(--blue); }
+  .c-string  { color: var(--amber); }
+  .c-var     { color: var(--purple); }
+  .c-out     { color: #6b7585; }
+  .c-root    { color: var(--red); }
+  .c-lfs     { color: var(--cyan); }
+
+  /* Package version table */
+  .pkg-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+  }
+  .pkg-table th {
+    background: var(--bg3);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 10px;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .pkg-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .pkg-table tr:hover td { background: var(--bg3); }
+  .pkg-name { color: var(--heading); font-weight: 500; }
+  .pkg-ver  { color: var(--green); }
+  .pkg-role { color: var(--muted); font-size: 11px; }
+  .pkg-url  { color: var(--blue); text-decoration: none; font-size: 11px; }
+  .pkg-url:hover { text-decoration: underline; }
+
+  /* Callout boxes */
+  .note, .warn, .tip, .danger {
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 24px 0;
+    border-left: 3px solid;
+    font-size: 15px;
+  }
+  .note   { background: #0e1a2e; border-color: var(--blue);   color: #93b8e8; }
+  .warn   { background: #1e1700; border-color: var(--amber);  color: #d4a847; }
+  .tip    { background: #0a1e12; border-color: var(--green);  color: #6dd99a; }
+  .danger { background: #1e0a0a; border-color: var(--red);    color: #e87777; }
+  .note strong, .warn strong, .tip strong, .danger strong {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+    opacity: 0.8;
+  }
+
+  /* Step indicator */
+  .steps { counter-reset: step; list-style: none; margin: 20px 0; }
+  .steps li {
+    counter-increment: step;
+    padding: 12px 0 12px 48px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    font-size: 15px;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 28px;
+    height: 28px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  /* Env var block */
+  .env-block {
+    background: #0a0d10;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 20px 0;
+  }
+  .env-block .env-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* Progress bar decorative */
+  .chapter-progress {
+    height: 2px;
+    background: linear-gradient(to right, var(--green), transparent);
+    margin-bottom: 32px;
+    border-radius: 1px;
+  }
+
+  /* Kbd */
+  kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: var(--bg3);
+    border: 1px solid #3a4050;
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 2px 7px;
+    color: var(--heading);
+  }
+
+  ul, ol { padding-left: 24px; margin-bottom: 16px; }
+  li { margin-bottom: 6px; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  strong { color: var(--heading); font-weight: 600; }
+  em { color: #9aa3b8; }
+
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .tag-green  { background: #0a2014; color: var(--green); border: 1px solid #1a4030; }
+  .tag-amber  { background: #1e1400; color: var(--amber); border: 1px solid #3a2800; }
+  .tag-blue   { background: #0a1428; color: var(--blue);  border: 1px solid #1a2848; }
+  .tag-red    { background: #1e0a0a; color: var(--red);   border: 1px solid #3a1414; }
+
+  @media (max-width: 900px) {
+    #sidebar { display: none; }
+    #main { padding: 32px 24px; }
+    .hero h1 { font-size: 36px; }
+  }
+
+  .brand-card {
+    background: linear-gradient(145deg, #12161f 0%, #0e1a14 55%, #13161c 100%);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 28px 24px;
+    margin: 28px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .brand-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 80% at 100% 0%, rgba(74,222,128,0.12), transparent 55%);
+    pointer-events: none;
+  }
+  .brand-lockup {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .brand-mark {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #4ade80, #16a34a 60%, #0f766e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    color: #04120a;
+    box-shadow: 0 12px 40px rgba(74,222,128,0.25);
+    flex-shrink: 0;
+  }
+  .brand-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--heading);
+    line-height: 1.1;
+  }
+  .brand-name span { color: var(--green); }
+  .brand-tagline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+  .brand-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    position: relative;
+  }
+  .brand-swatch {
+    border-radius: 8px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .brand-swatch .sw {
+    height: 28px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .brand-swatch .lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .brand-swatch .hex {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--heading);
+    margin-top: 2px;
+  }
+  .checklist {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+  }
+  .checklist li {
+    padding: 10px 0 10px 32px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    font-size: 15px;
+  }
+  .checklist li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    color: var(--green);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+  }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+  }
+  @media (max-width: 720px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
+  .mini-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .mini-card h4 { margin-top: 0; }
+  .mini-card p:last-child { margin-bottom: 0; font-size: 15px; color: #9aa3b8; }
+
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">// byol guide</div>
+    <div class="logo-sub">Forge Linux</div>
+    <div class="edition-badge">2026 · Aug refresh</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Intro</div>
+    <a class="nav-item active" href="#intro"><span class="nav-num">00</span> Introduction</a>
+    <a class="nav-item" href="#packages"><span class="nav-num">01</span> Package Versions</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Environment</div>
+    <a class="nav-item" href="#host"><span class="nav-num">02</span> Host System</a>
+    <a class="nav-item" href="#partition"><span class="nav-num">03</span> Partition &amp; Mount</a>
+    <a class="nav-item" href="#env"><span class="nav-num">04</span> Build Environment</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Toolchain</div>
+    <a class="nav-item" href="#binutils1"><span class="nav-num">05</span> Binutils Pass 1</a>
+    <a class="nav-item" href="#gcc1"><span class="nav-num">06</span> GCC Pass 1</a>
+    <a class="nav-item" href="#linux-headers"><span class="nav-num">07</span> Kernel Headers</a>
+    <a class="nav-item" href="#glibc"><span class="nav-num">08</span> Glibc</a>
+    <a class="nav-item" href="#libstdc"><span class="nav-num">09</span> Libstdc++</a>
+    <a class="nav-item" href="#binutils2"><span class="nav-num">10</span> Binutils Pass 2</a>
+    <a class="nav-item" href="#gcc2"><span class="nav-num">11</span> GCC Pass 2</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Base System</div>
+    <a class="nav-item" href="#chroot"><span class="nav-num">12</span> Chroot Setup</a>
+    <a class="nav-item" href="#core-pkgs"><span class="nav-num">13</span> Core Packages</a>
+    <a class="nav-item" href="#system-pkgs"><span class="nav-num">14</span> System Packages</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Finalize</div>
+    <a class="nav-item" href="#kernel"><span class="nav-num">15</span> Linux Kernel</a>
+    <a class="nav-item" href="#sysconfig"><span class="nav-num">16</span> System Config</a>
+    <a class="nav-item" href="#systemd"><span class="nav-num">17</span> systemd</a>
+    <a class="nav-item" href="#grub"><span class="nav-num">18</span> GRUB Bootloader</a>
+    <a class="nav-item" href="#boot"><span class="nav-num">19</span> First Boot</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Your Distro</div>
+    <a class="nav-item" href="#branding"><span class="nav-num">20</span> Brand Identity</a>
+    <a class="nav-item" href="#os-identity"><span class="nav-num">21</span> OS Identity Files</a>
+    <a class="nav-item" href="#visual-brand"><span class="nav-num">22</span> Visual Branding</a>
+    <a class="nav-item" href="#pkg-mgr"><span class="nav-num">23</span> Package Manager</a>
+    <a class="nav-item" href="#userspace"><span class="nav-num">24</span> Userspace Stack</a>
+    <a class="nav-item" href="#iso"><span class="nav-num">25</span> Live ISO &amp; Image</a>
+    <a class="nav-item" href="#installer"><span class="nav-num">26</span> Installer</a>
+    <a class="nav-item" href="#release"><span class="nav-num">27</span> Release Engineering</a>
+    <a class="nav-item" href="#roadmap"><span class="nav-num">28</span> Distro Roadmap</a>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">// forge linux — your distro from source · 3 aug 2026</div>
+    <h1>Build <span>Forge</span> Linux</h1>
+    <p class="hero-desc">From bare-metal toolchain to a named distribution you own — branded identity, package path, live ISO, installer, and release engineering. Host Fedora 44 · LFS 13.0-aligned packages · kernel 7.1.5.</p>
+    <div class="meta-grid">
+      <div class="meta-item"><div class="meta-label">Kernel</div><div class="meta-val">7.1.5 (stable)</div></div>
+      <div class="meta-item"><div class="meta-label">GCC</div><div class="meta-val">15.2.0</div></div>
+      <div class="meta-item"><div class="meta-label">glibc</div><div class="meta-val">2.43</div></div>
+      <div class="meta-item"><div class="meta-label">Binutils</div><div class="meta-val">2.46.0</div></div>
+      <div class="meta-item"><div class="meta-label">systemd</div><div class="meta-val">259.1</div></div>
+      <div class="meta-item"><div class="meta-label">Host</div><div class="meta-val">Fedora 44</div></div>
+    </div>
+  </div>
+
+  <!-- CHAPTER 00: INTRO -->
+  <section class="chapter" id="intro">
+    <div class="chapter-progress" style="width:100%"></div>
+    <div class="chapter-num">Chapter 00</div>
+    <h2>Introduction</h2>
+
+    <p>This guide is a spiritual successor to the <em>Build Your Own Linux</em> course originally offered by Linux Academy, updated for 2026 toolchains and modern system design. Like the original, it uses <strong>Fedora</strong> as the host system and walks you through building every component of a working Linux distribution from source code.</p>
+
+    <p>The approach is fundamentally the same as the venerable <a href="https://www.linuxfromscratch.org">Linux From Scratch</a> project — you compile everything yourself, understand every dependency, and end up with a minimal, bootable system. What this guide adds is Fedora-centric tooling context, package versions aligned with <strong>LFS 13.0-systemd</strong> (plus current kernel.org stable 7.1.5), and systemd as the init system from day one. Last refreshed <strong>3 August 2026</strong>.</p>
+
+    <h3>What You Will Build</h3>
+    <p>By the end of this guide you will have <strong>Forge Linux</strong> — a named distro, not only a generic rootfs:</p>
+    <ul>
+      <li>Boots independently (partition or installable ISO)</li>
+      <li>Shell, coreutils, util-linux, networking, <strong>systemd</strong>, <strong>GRUB 2.14</strong></li>
+      <li>Toolchain: <strong>glibc 2.43</strong>, <strong>GCC 15.2</strong>, kernel <strong>7.1.5</strong></li>
+      <li>Full brand identity: os-release, MOTD, issue, hostname, GRUB theme</li>
+      <li>Path to package manager, live ISO, installer, and release engineering (Ch. 20–28)</li>
+    </ul>
+
+    <h3>Philosophy</h3>
+    <p>Chapters 00–19 build a correct minimal system (the LFS spine). Chapters 20–28 turn it into <em>your distribution</em>. You start with a <em>learning system</em> — one that gives you deep, hands-on understanding of how the pieces of Linux fit together. After completing this guide you will understand:</p>
+    <ul>
+      <li>What a cross-compilation toolchain is and why you need one</li>
+      <li>The relationship between the kernel, glibc, and userspace</li>
+      <li>How init systems, mount points, and the FHS all interrelate</li>
+      <li>The role of the bootloader and how GRUB configures the kernel command line</li>
+      <li>How distros claim identity (<code>/etc/os-release</code>, branding, legal strings)</li>
+      <li>What separates a rootfs from a shippable distro (packages, ISO, release process)</li>
+    </ul>
+
+    <div class="brand-card">
+      <div class="brand-lockup">
+        <div class="brand-mark">F</div>
+        <div>
+          <div class="brand-name">Forge <span>Linux</span></div>
+          <div class="brand-tagline">VERSION 0.1.0 · CODENAME “anvil” · YOUR DISTRO</div>
+        </div>
+      </div>
+      <p style="position:relative;margin-bottom:16px;color:#9aa3b8;font-size:15px">
+        Default brand used in Chapters 20–28. Rename via the identity kit — one file drives os-release, GRUB, MOTD, hostname, and ISO labels.
+      </p>
+      <div class="brand-grid">
+        <div class="brand-swatch"><div class="sw" style="background:#4ade80"></div><div class="lbl">Primary</div><div class="hex">#4ade80</div></div>
+        <div class="brand-swatch"><div class="sw" style="background:#0d0f12"></div><div class="lbl">Ink</div><div class="hex">#0d0f12</div></div>
+        <div class="brand-swatch"><div class="sw" style="background:#e8edf5"></div><div class="lbl">Paper</div><div class="hex">#e8edf5</div></div>
+        <div class="brand-swatch"><div class="sw" style="background:#22d3ee"></div><div class="lbl">Accent</div><div class="hex">#22d3ee</div></div>
+        <div class="brand-swatch"><div class="sw" style="background:#fbbf24"></div><div class="lbl">Warn</div><div class="hex">#fbbf24</div></div>
+      </div>
+    </div>
+
+    <div class="tip">
+      <strong>Tip</strong>
+      Run this entire build inside a virtual machine. VirtualBox or GNOME Boxes on Fedora both work excellently. Snapshots let you roll back if a build step goes wrong without losing hours of work.
+    </div>
+
+    <h3>Time Estimate</h3>
+    <p>On a modern machine with 4+ cores and an SSD, expect the full build to take <strong>4–8 hours</strong>. The GCC and glibc builds dominate the compile time. Use <code>make -j$(nproc)</code> throughout to parallelise.</p>
+
+    <h3>Conventions Used</h3>
+    <p>Commands are shown in code blocks. The prompt tells you who should run the command:</p>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">command run as root</span>
+<span class="c-lfs">lfs$</span>  <span class="c-cmd">command run as the lfs build user</span>
+<span class="c-out"># this is a comment / explanatory note</span></code></pre>
+
+    <p>Variables you must substitute with your own values are written <code>$LIKE_THIS</code>.</p>
+  </section>
+
+  <!-- CHAPTER 01: PACKAGES -->
+  <section class="chapter" id="packages">
+    <div class="chapter-num">Chapter 01</div>
+    <h2>Package Versions Reference</h2>
+    <p>Always verify you are downloading the exact versions listed below. Using a different minor version can cause subtle build failures downstream, especially in the toolchain stages.</p>
+
+    <h3>Toolchain</h3>
+    <table class="pkg-table">
+      <thead><tr><th>Package</th><th>Version</th><th>Download</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td class="pkg-name">Binutils</td><td class="pkg-ver">2.46.0</td><td><a class="pkg-url" href="https://sourceware.org/pub/binutils/releases/">sourceware.org/binutils</a></td><td class="pkg-role">Linker, assembler, object tools</td></tr>
+        <tr><td class="pkg-name">GCC</td><td class="pkg-ver">15.2.0</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/gcc/">gnu.org/gcc</a></td><td class="pkg-role">C/C++ compiler collection</td></tr>
+        <tr><td class="pkg-name">Linux (headers)</td><td class="pkg-ver">7.1.5</td><td><a class="pkg-url" href="https://kernel.org">kernel.org</a></td><td class="pkg-role">Kernel API headers for glibc</td></tr>
+        <tr><td class="pkg-name">Glibc</td><td class="pkg-ver">2.43</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/glibc/">gnu.org/glibc</a></td><td class="pkg-role">GNU C library</td></tr>
+        <tr><td class="pkg-name">GMP</td><td class="pkg-ver">6.3.0</td><td><a class="pkg-url" href="https://gmplib.org">gmplib.org</a></td><td class="pkg-role">GCC dependency: arbitrary precision math</td></tr>
+        <tr><td class="pkg-name">MPFR</td><td class="pkg-ver">4.2.2</td><td><a class="pkg-url" href="https://www.mpfr.org">mpfr.org</a></td><td class="pkg-role">GCC dependency: floating point</td></tr>
+        <tr><td class="pkg-name">MPC</td><td class="pkg-ver">1.3.1</td><td><a class="pkg-url" href="https://www.multiprecision.org/mpc/">multiprecision.org</a></td><td class="pkg-role">GCC dependency: complex arithmetic</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Base System</h3>
+    <table class="pkg-table">
+      <thead><tr><th>Package</th><th>Version</th><th>Download</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td class="pkg-name">Bash</td><td class="pkg-ver">5.3</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/bash/">gnu.org/bash</a></td><td class="pkg-role">Shell</td></tr>
+        <tr><td class="pkg-name">Coreutils</td><td class="pkg-ver">9.10</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/coreutils/">gnu.org/coreutils</a></td><td class="pkg-role">ls, cp, mv, cat, echo…</td></tr>
+        <tr><td class="pkg-name">util-linux</td><td class="pkg-ver">2.41.3</td><td><a class="pkg-url" href="https://www.kernel.org/pub/linux/utils/util-linux/">kernel.org/util-linux</a></td><td class="pkg-role">mount, blkid, lsblk, fdisk…</td></tr>
+        <tr><td class="pkg-name">e2fsprogs</td><td class="pkg-ver">1.47.3</td><td><a class="pkg-url" href="https://sourceforge.net/projects/e2fsprogs/">sf/e2fsprogs</a></td><td class="pkg-role">ext4 filesystem tools</td></tr>
+        <tr><td class="pkg-name">shadow</td><td class="pkg-ver">4.19.3</td><td><a class="pkg-url" href="https://github.com/shadow-maint/shadow/releases">github/shadow</a></td><td class="pkg-role">useradd, passwd, login</td></tr>
+        <tr><td class="pkg-name">procps-ng</td><td class="pkg-ver">4.0.6</td><td><a class="pkg-url" href="https://sourceforge.net/projects/procps-ng/">sf/procps-ng</a></td><td class="pkg-role">ps, top, free</td></tr>
+        <tr><td class="pkg-name">ncurses</td><td class="pkg-ver">6.6</td><td><a class="pkg-url" href="https://invisible-island.net/ncurses/">invisible-island.net</a></td><td class="pkg-role">Terminal UI library</td></tr>
+        <tr><td class="pkg-name">readline</td><td class="pkg-ver">8.3</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/readline/">gnu.org/readline</a></td><td class="pkg-role">Line editing (used by bash)</td></tr>
+        <tr><td class="pkg-name">zlib</td><td class="pkg-ver">1.3.2</td><td><a class="pkg-url" href="https://zlib.net">zlib.net</a></td><td class="pkg-role">Compression library</td></tr>
+        <tr><td class="pkg-name">bzip2</td><td class="pkg-ver">1.0.8</td><td><a class="pkg-url" href="https://sourceware.org/bzip2/">sourceware.org/bzip2</a></td><td class="pkg-role">.bz2 compression</td></tr>
+        <tr><td class="pkg-name">xz</td><td class="pkg-ver">5.8.2</td><td><a class="pkg-url" href="https://tukaani.org/xz/">tukaani.org/xz</a></td><td class="pkg-role">.xz / LZMA compression</td></tr>
+        <tr><td class="pkg-name">tar</td><td class="pkg-ver">1.35</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/tar/">gnu.org/tar</a></td><td class="pkg-role">Archive tool</td></tr>
+        <tr><td class="pkg-name">grep</td><td class="pkg-ver">3.12</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/grep/">gnu.org/grep</a></td><td class="pkg-role">Pattern search</td></tr>
+        <tr><td class="pkg-name">sed</td><td class="pkg-ver">4.9</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/sed/">gnu.org/sed</a></td><td class="pkg-role">Stream editor</td></tr>
+        <tr><td class="pkg-name">gawk</td><td class="pkg-ver">5.3.2</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/gawk/">gnu.org/gawk</a></td><td class="pkg-role">AWK interpreter</td></tr>
+        <tr><td class="pkg-name">make</td><td class="pkg-ver">4.4.1</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/make/">gnu.org/make</a></td><td class="pkg-role">Build system</td></tr>
+        <tr><td class="pkg-name">patch</td><td class="pkg-ver">2.8</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/patch/">gnu.org/patch</a></td><td class="pkg-role">Apply diff patches</td></tr>
+        <tr><td class="pkg-name">findutils</td><td class="pkg-ver">4.10.0</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/findutils/">gnu.org/findutils</a></td><td class="pkg-role">find, locate, xargs</td></tr>
+        <tr><td class="pkg-name">systemd</td><td class="pkg-ver">259.1</td><td><a class="pkg-url" href="https://github.com/systemd/systemd/releases">github/systemd</a></td><td class="pkg-role">Init system &amp; service manager</td></tr>
+        <tr><td class="pkg-name">GRUB</td><td class="pkg-ver">2.14</td><td><a class="pkg-url" href="https://ftp.gnu.org/gnu/grub/">gnu.org/grub</a></td><td class="pkg-role">Bootloader</td></tr>
+      </tbody>
+    </table>
+
+    <div class="warn">
+      <strong>Always Verify</strong>
+      Before each build step, check that the tarball version matches exactly. Run <code>sha256sum &lt;tarball&gt;</code> and compare against the checksums published on the project's official download page.
+    </div>
+  </section>
+
+  <!-- CHAPTER 02: HOST SYSTEM -->
+  <section class="chapter" id="host">
+    <div class="chapter-num">Chapter 02</div>
+    <h2>Preparing the Host System</h2>
+    <p>We use <strong>Fedora 44</strong> as the build host. The Fedora toolchain is modern and compatible with current package requirements. A minimal install plus development groups is all you need.</p>
+
+    <h3>Install Required Host Packages</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">dnf groupinstall</span> <span class="c-string">"Development Tools"</span>
+<span class="c-root">root#</span> <span class="c-cmd">dnf install</span> <span class="c-flag">\</span>
+    bison flex gawk texinfo bc m4 <span class="c-flag">\</span>
+    python3 perl wget curl <span class="c-flag">\</span>
+    libstdc++-static glibc-static <span class="c-flag">\</span>
+    xz bzip2 zlib-devel openssl-devel <span class="c-flag">\</span>
+    libmpc-devel gmp-devel mpfr-devel</code></pre>
+
+    <h3>Verify Tool Versions</h3>
+    <p>Fedora 44 ships a modern toolchain (GCC 15 / Binutils 2.44+) that exceeds all minimums for this guide. Run this check to confirm:</p>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">bash</span> <span class="c-flag">-c</span> <span class="c-string">'
+echo "Bash:     $(bash --version | head -1)"
+echo "GCC:      $(gcc --version | head -1)"
+echo "Binutils: $(ld --version | head -1)"
+echo "Make:     $(make --version | head -1)"
+echo "Python:   $(python3 --version)"
+'</span></code></pre>
+
+    <div class="tip">
+      <strong>Recommended</strong>
+      Take a VirtualBox snapshot labelled <em>"host-ready"</em> before proceeding. This gives you a clean rollback point.
+    </div>
+  </section>
+
+  <!-- CHAPTER 03: PARTITION -->
+  <section class="chapter" id="partition">
+    <div class="chapter-num">Chapter 03</div>
+    <h2>Partition &amp; Mount the Target Disk</h2>
+    <p>We need a dedicated partition for the new system. For a VM build, add a second virtual disk (<strong>30 GB minimum</strong>) and partition it as follows.</p>
+
+    <h3>Partition Layout</h3>
+    <table class="pkg-table">
+      <thead><tr><th>Partition</th><th>Size</th><th>Filesystem</th><th>Mount</th></tr></thead>
+      <tbody>
+        <tr><td class="pkg-name">/dev/sdb1</td><td class="pkg-ver">512 MB</td><td>FAT32 (ESP)</td><td class="pkg-role">/boot/efi (UEFI systems)</td></tr>
+        <tr><td class="pkg-name">/dev/sdb2</td><td class="pkg-ver">1 GB</td><td>ext4</td><td class="pkg-role">/boot</td></tr>
+        <tr><td class="pkg-name">/dev/sdb3</td><td class="pkg-ver">Remainder</td><td>ext4</td><td class="pkg-role">/  (root)</td></tr>
+      </tbody>
+    </table>
+
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">fdisk</span> /dev/sdb
+<span class="c-out"># Create GPT partition table, then partitions as above
+# Type g for GPT, n for new partition, w to write</span>
+
+<span class="c-root">root#</span> <span class="c-cmd">mkfs.fat</span> <span class="c-flag">-F32</span> /dev/sdb1
+<span class="c-root">root#</span> <span class="c-cmd">mkfs.ext4</span> /dev/sdb2
+<span class="c-root">root#</span> <span class="c-cmd">mkfs.ext4</span> /dev/sdb3</code></pre>
+
+    <h3>Set the LFS Variable and Mount</h3>
+    <p>The <code>$LFS</code> variable is used throughout — it points to where the new system is being assembled.</p>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">export</span> <span class="c-var">LFS</span>=/mnt/lfs
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>
+<span class="c-root">root#</span> <span class="c-cmd">mount</span> /dev/sdb3 <span class="c-var">$LFS</span>
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/boot
+<span class="c-root">root#</span> <span class="c-cmd">mount</span> /dev/sdb2 <span class="c-var">$LFS</span>/boot
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/boot/efi
+<span class="c-root">root#</span> <span class="c-cmd">mount</span> /dev/sdb1 <span class="c-var">$LFS</span>/boot/efi</code></pre>
+
+    <h3>Create the Sources Directory</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-v</span> <span class="c-var">$LFS</span>/sources
+<span class="c-root">root#</span> <span class="c-cmd">chmod</span> <span class="c-flag">-v</span> a+wt <span class="c-var">$LFS</span>/sources
+<span class="c-out"># Download all source tarballs to $LFS/sources
+# You can use wget with the URLs from Chapter 01</span></code></pre>
+  </section>
+
+  <!-- CHAPTER 04: BUILD ENV -->
+  <section class="chapter" id="env">
+    <div class="chapter-num">Chapter 04</div>
+    <h2>Build Environment Setup</h2>
+
+    <h3>Create the LFS Build User</h3>
+    <p>Never build as root during the toolchain phase. Create a dedicated <code>lfs</code> user:</p>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">groupadd</span> lfs
+<span class="c-root">root#</span> <span class="c-cmd">useradd</span> <span class="c-flag">-s</span> /bin/bash <span class="c-flag">-g</span> lfs <span class="c-flag">-m</span> <span class="c-flag">-k</span> /dev/null lfs
+<span class="c-root">root#</span> <span class="c-cmd">passwd</span> lfs
+<span class="c-root">root#</span> <span class="c-cmd">chown</span> <span class="c-flag">-v</span> lfs <span class="c-var">$LFS</span>/sources
+<span class="c-root">root#</span> <span class="c-cmd">chown</span> <span class="c-flag">-v</span> lfs <span class="c-var">$LFS</span>/tools</code></pre>
+
+    <h3>Configure the lfs User's Shell Environment</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">su</span> <span class="c-flag">-</span> lfs
+<span class="c-lfs">lfs$</span> <span class="c-cmd">cat</span> > ~/.bash_profile <span class="c-string">&lt;&lt; "EOF"
+exec env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash
+EOF</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">cat</span> > ~/.bashrc <span class="c-string">&lt;&lt; "EOF"
+set +h
+umask 022
+LFS=/mnt/lfs
+LC_ALL=POSIX
+LFS_TGT=$(uname -m)-lfs-linux-gnu
+PATH=/usr/bin
+if [ ! -L /bin ]; then PATH=/bin:$PATH; fi
+PATH=$LFS/tools/bin:$PATH
+CONFIG_SITE=$LFS/usr/share/config.site
+export LFS LC_ALL LFS_TGT PATH CONFIG_SITE
+EOF</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">source</span> ~/.bash_profile</code></pre>
+
+    <div class="note">
+      <strong>Why <code>set +h</code>?</strong>
+      This disables bash's hash table so the shell always searches PATH fresh. This is critical during the toolchain build — we need the shell to pick up the new tools we're building in <code>$LFS/tools</code> rather than the cached host paths.
+    </div>
+
+    <h3>Create the Toolchain Directories</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/tools
+<span class="c-root">root#</span> <span class="c-cmd">ln</span> <span class="c-flag">-sv</span> <span class="c-var">$LFS</span>/tools /tools</code></pre>
+
+    <p>The symlink <code>/tools</code> → <code>$LFS/tools</code> lets the toolchain build scripts use hardcoded <code>/tools</code> paths that work both on the host and, later, inside the chroot.</p>
+  </section>
+
+  <!-- CHAPTER 05: BINUTILS PASS 1 -->
+  <section class="chapter" id="binutils1">
+    <div class="chapter-num">Chapter 05</div>
+    <h2>Binutils — Pass 1</h2>
+    <p>Binutils provides the assembler (<code>as</code>), linker (<code>ld</code>), and object file utilities. It must be compiled first because GCC and glibc run configure checks that rely on it.</p>
+
+    <div class="warn">
+      <strong>Build Outside the Source Tree</strong>
+      Binutils (and GCC) must be built in a separate build directory, not inside the extracted source tree. Failure to do this is one of the most common causes of cryptic build errors.
+    </div>
+
+    <pre><code><span class="c-lfs">lfs$</span> <span class="c-cmd">cd</span> <span class="c-var">$LFS</span>/sources
+<span class="c-lfs">lfs$</span> <span class="c-cmd">tar</span> <span class="c-flag">-xf</span> binutils-2.46.0.tar.xz
+<span class="c-lfs">lfs$</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-v</span> binutils-2.46.0/build
+<span class="c-lfs">lfs$</span> <span class="c-cmd">cd</span> binutils-2.46.0/build
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">../configure</span>                     <span class="c-flag">\</span>
+    <span class="c-flag">--prefix=</span>/tools                   <span class="c-flag">\</span>
+    <span class="c-flag">--with-sysroot=</span><span class="c-var">$LFS</span>               <span class="c-flag">\</span>
+    <span class="c-flag">--target=</span><span class="c-var">$LFS_TGT</span>                 <span class="c-flag">\</span>
+    <span class="c-flag">--disable-nls</span>                      <span class="c-flag">\</span>
+    <span class="c-flag">--enable-gprofng=no</span>                <span class="c-flag">\</span>
+    <span class="c-flag">--disable-werror</span>                   <span class="c-flag">\</span>
+    <span class="c-flag">--enable-new-dtags</span>                 <span class="c-flag">\</span>
+    <span class="c-flag">--enable-default-hash-style=gnu</span>
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> <span class="c-flag">install</span></code></pre>
+
+    <h4>What <code>--with-sysroot</code> does</h4>
+    <p>This tells binutils to look for libraries and headers under <code>$LFS</code> rather than the host root. Combined with <code>--target=$LFS_TGT</code>, this creates a <em>cross-binutils</em> that targets the new system.</p>
+  </section>
+
+  <!-- CHAPTER 06: GCC PASS 1 -->
+  <section class="chapter" id="gcc1">
+    <div class="chapter-num">Chapter 06</div>
+    <h2>GCC — Pass 1</h2>
+    <p>The first GCC pass produces a minimal C-only cross-compiler. It is intentionally limited — no shared libraries, no C++ support. Its sole purpose is to compile glibc.</p>
+
+    <pre><code><span class="c-lfs">lfs$</span> <span class="c-cmd">cd</span> <span class="c-var">$LFS</span>/sources
+<span class="c-lfs">lfs$</span> <span class="c-cmd">tar</span> <span class="c-flag">-xf</span> gcc-15.2.0.tar.xz
+<span class="c-lfs">lfs$</span> <span class="c-cmd">cd</span> gcc-15.2.0
+
+<span class="c-out"># Unpack GCC prerequisites into the source tree</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">tar</span> <span class="c-flag">-xf</span> ../gmp-6.3.0.tar.xz  <span class="c-flag">--transform</span> <span class="c-string">'s/gmp-6.3.0/gmp/'</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">tar</span> <span class="c-flag">-xf</span> ../mpfr-4.2.2.tar.xz <span class="c-flag">--transform</span> <span class="c-string">'s/mpfr-4.2.2/mpfr/'</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">tar</span> <span class="c-flag">-xf</span> ../mpc-1.3.1.tar.gz  <span class="c-flag">--transform</span> <span class="c-string">'s/mpc-1.3.1/mpc/'</span>
+
+<span class="c-out"># x86_64: limit library search to lib64 only</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">case</span> $(uname <span class="c-flag">-m</span>) <span class="c-cmd">in</span>
+  x86_64)
+    <span class="c-cmd">sed</span> <span class="c-flag">-e</span> <span class="c-string">'s/m64=/m64=/'</span> <span class="c-flag">\</span>
+        <span class="c-flag">-e</span> <span class="c-string">'s@/lib/ld@/lib64/ld@g'</span> <span class="c-flag">\</span>
+        <span class="c-flag">-i</span> gcc/config/i386/t-linux64
+  ;;
+<span class="c-cmd">esac</span>
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-v</span> build && <span class="c-cmd">cd</span> build
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">../configure</span>                       <span class="c-flag">\</span>
+    <span class="c-flag">--target=</span><span class="c-var">$LFS_TGT</span>                   <span class="c-flag">\</span>
+    <span class="c-flag">--prefix=</span>/tools                     <span class="c-flag">\</span>
+    <span class="c-flag">--with-glibc-version=</span>2.43           <span class="c-flag">\</span>
+    <span class="c-flag">--with-sysroot=</span><span class="c-var">$LFS</span>                 <span class="c-flag">\</span>
+    <span class="c-flag">--with-newlib</span>                        <span class="c-flag">\</span>
+    <span class="c-flag">--without-headers</span>                   <span class="c-flag">\</span>
+    <span class="c-flag">--enable-default-pie</span>                <span class="c-flag">\</span>
+    <span class="c-flag">--enable-default-ssp</span>                <span class="c-flag">\</span>
+    <span class="c-flag">--disable-nls</span>                        <span class="c-flag">\</span>
+    <span class="c-flag">--disable-shared</span>                    <span class="c-flag">\</span>
+    <span class="c-flag">--disable-multilib</span>                  <span class="c-flag">\</span>
+    <span class="c-flag">--disable-threads</span>                   <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libatomic</span>                 <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libgomp</span>                   <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libquadmath</span>               <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libssp</span>                    <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libvtv</span>                    <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libstdcxx</span>                 <span class="c-flag">\</span>
+    <span class="c-flag">--enable-languages=</span>c,c++
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> install
+
+<span class="c-out"># Create a full-featured limits.h (needed for glibc build)</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">cat</span> gcc/limitx.h gcc/glimits.h gcc/limity.h > \
+  `dirname $($LFS_TGT-gcc -print-libgcc-file-name)`/include/limits.h</code></pre>
+  </section>
+
+  <!-- CHAPTER 07: LINUX HEADERS -->
+  <section class="chapter" id="linux-headers">
+    <div class="chapter-num">Chapter 07</div>
+    <h2>Linux Kernel Headers</h2>
+    <p>The C library needs the kernel's API headers to know which system calls are available. We install them but do <em>not</em> build the kernel yet — that comes later.</p>
+
+    <pre><code><span class="c-lfs">lfs$</span> <span class="c-cmd">cd</span> <span class="c-var">$LFS</span>/sources
+<span class="c-lfs">lfs$</span> <span class="c-cmd">tar</span> <span class="c-flag">-xf</span> linux-7.1.5.tar.xz
+<span class="c-lfs">lfs$</span> <span class="c-cmd">cd</span> linux-7.1.5
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> mrproper
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> headers
+<span class="c-lfs">lfs$</span> <span class="c-cmd">find</span> usr/include <span class="c-flag">-name</span> <span class="c-string">'.*'</span> <span class="c-flag">-delete</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">rm</span> usr/include/Makefile
+<span class="c-lfs">lfs$</span> <span class="c-cmd">cp</span> <span class="c-flag">-rv</span> usr/include <span class="c-var">$LFS</span>/usr</code></pre>
+
+    <div class="note">
+      <strong>Note</strong>
+      <code>make mrproper</code> ensures the source tree is pristine. Never skip this when working with kernel source trees.
+    </div>
+  </section>
+
+  <!-- CHAPTER 08: GLIBC -->
+  <section class="chapter" id="glibc">
+    <div class="chapter-num">Chapter 08</div>
+    <h2>Glibc — The GNU C Library</h2>
+    <p>This is the most critical and time-consuming build step. Glibc is the interface between your programs and the Linux kernel. Every program on your system will be linked against it.</p>
+
+    <pre><code><span class="c-lfs">lfs$</span> <span class="c-cmd">cd</span> <span class="c-var">$LFS</span>/sources
+<span class="c-lfs">lfs$</span> <span class="c-cmd">tar</span> <span class="c-flag">-xf</span> glibc-2.43.tar.xz
+<span class="c-lfs">lfs$</span> <span class="c-cmd">cd</span> glibc-2.43
+
+<span class="c-out"># Ensure the dynamic linker looks in /lib64 on x86_64</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">case</span> $(uname <span class="c-flag">-m</span>) <span class="c-cmd">in</span>
+    i?86) ln <span class="c-flag">-sfv</span> ld-linux.so.2 <span class="c-var">$LFS</span>/lib/ld-lsb.so.3 ;;
+  x86_64) ln <span class="c-flag">-sfv</span> /lib/ld-linux-x86-64.so.2 <span class="c-var">$LFS</span>/lib64
+          ln <span class="c-flag">-sfv</span> /lib/ld-linux-x86-64.so.2 <span class="c-var">$LFS</span>/lib64/ld-lsb-x86-64.so.3 ;;
+<span class="c-cmd">esac</span>
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">patch</span> <span class="c-flag">-Np1</span> <span class="c-flag">-i</span> ../glibc-2.43-fhs-1.patch
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-v</span> build && <span class="c-cmd">cd</span> build
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">echo</span> <span class="c-string">"rootsbindir=/usr/sbin"</span> > configparms
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">../configure</span>                             <span class="c-flag">\</span>
+    <span class="c-flag">--prefix=</span>/usr                             <span class="c-flag">\</span>
+    <span class="c-flag">--host=</span><span class="c-var">$LFS_TGT</span>                           <span class="c-flag">\</span>
+    <span class="c-flag">--build=</span>$(../scripts/config.guess)        <span class="c-flag">\</span>
+    <span class="c-flag">--enable-kernel=</span>5.4                       <span class="c-flag">\</span>
+    <span class="c-flag">--with-headers=</span><span class="c-var">$LFS</span>/usr/include           <span class="c-flag">\</span>
+    <span class="c-flag">--disable-nscd</span>                            <span class="c-flag">\</span>
+    libc_cv_slibdir=/usr/lib
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> DESTDIR=<span class="c-var">$LFS</span> install
+
+<span class="c-out"># Fix the dynamic linker path in the GCC specs file</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">sed</span> <span class="c-string">'/RTLDLIST=/s@/usr@@g'</span> <span class="c-flag">-i</span> <span class="c-var">$LFS</span>/usr/bin/ldd</code></pre>
+
+    <h3>Sanity Check</h3>
+    <p>This is critical. Test that the cross-compiler can actually produce executables that will run on the target:</p>
+    <pre><code><span class="c-lfs">lfs$</span> <span class="c-cmd">echo</span> <span class="c-string">'int main(){}' | $LFS_TGT-gcc -xc -</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">readelf</span> <span class="c-flag">-l</span> a.out | <span class="c-cmd">grep</span> <span class="c-string">ld-linux</span>
+<span class="c-out">[Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">rm</span> <span class="c-flag">-v</span> a.out</code></pre>
+
+    <div class="danger">
+      <strong>Stop if this check fails</strong>
+      The interpreter path must point into <code>/lib64/</code> or <code>/lib/</code> — not the host's path. If it shows your host system's path, something went wrong in the glibc configure step. Do not proceed until this is correct.
+    </div>
+  </section>
+
+  <!-- CHAPTER 09: LIBSTDC++ -->
+  <section class="chapter" id="libstdc">
+    <div class="chapter-num">Chapter 09</div>
+    <h2>Libstdc++ — Pass 1</h2>
+    <p>Libstdc++ is GCC's C++ standard library. We install a pass-1 version now (from the same GCC source tree) so that subsequent packages with C++ components can build. The full version is reinstalled in GCC pass 2.</p>
+
+    <pre><code><span class="c-lfs">lfs$</span> <span class="c-cmd">cd</span> <span class="c-var">$LFS</span>/sources/gcc-15.2.0
+<span class="c-lfs">lfs$</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-v</span> build-libstdc++ && <span class="c-cmd">cd</span> build-libstdc++
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">../libstdc++-v3/configure</span>             <span class="c-flag">\</span>
+    <span class="c-flag">--host=</span><span class="c-var">$LFS_TGT</span>                       <span class="c-flag">\</span>
+    <span class="c-flag">--build=</span>$(../config.guess)            <span class="c-flag">\</span>
+    <span class="c-flag">--prefix=</span>/usr                         <span class="c-flag">\</span>
+    <span class="c-flag">--disable-multilib</span>                    <span class="c-flag">\</span>
+    <span class="c-flag">--disable-nls</span>                         <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libstdcxx-pch</span>              <span class="c-flag">\</span>
+    <span class="c-flag">--with-gxx-include-dir=</span>/tools/<span class="c-var">$LFS_TGT</span>/include/c++/15.2.0
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> DESTDIR=<span class="c-var">$LFS</span> install
+
+<span class="c-out"># Remove the libtool archive files — they cause trouble later</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">rm</span> <span class="c-flag">-v</span> <span class="c-var">$LFS</span>/usr/lib/lib{stdc++{,exp},supc++}.la</code></pre>
+  </section>
+
+  <!-- CHAPTER 10: BINUTILS PASS 2 -->
+  <section class="chapter" id="binutils2">
+    <div class="chapter-num">Chapter 10</div>
+    <h2>Binutils — Pass 2</h2>
+    <p>Now that glibc is in place, we rebuild binutils targeting the new system's headers and libraries. This replaces the pass-1 cross-binutils with a proper version.</p>
+
+    <pre><code><span class="c-lfs">lfs$</span> <span class="c-cmd">cd</span> <span class="c-var">$LFS</span>/sources/binutils-2.46.0
+<span class="c-lfs">lfs$</span> <span class="c-cmd">rm</span> <span class="c-flag">-rf</span> build && <span class="c-cmd">mkdir</span> build && <span class="c-cmd">cd</span> build
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">../configure</span>                           <span class="c-flag">\</span>
+    <span class="c-flag">--prefix=</span>/usr                           <span class="c-flag">\</span>
+    <span class="c-flag">--build=</span>$(../config.guess)              <span class="c-flag">\</span>
+    <span class="c-flag">--host=</span><span class="c-var">$LFS_TGT</span>                         <span class="c-flag">\</span>
+    <span class="c-flag">--disable-nls</span>                           <span class="c-flag">\</span>
+    <span class="c-flag">--enable-shared</span>                         <span class="c-flag">\</span>
+    <span class="c-flag">--enable-gprofng=no</span>                     <span class="c-flag">\</span>
+    <span class="c-flag">--disable-werror</span>                        <span class="c-flag">\</span>
+    <span class="c-flag">--enable-64-bit-bfd</span>                     <span class="c-flag">\</span>
+    <span class="c-flag">--enable-new-dtags</span>                      <span class="c-flag">\</span>
+    <span class="c-flag">--enable-default-hash-style=gnu</span>
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> DESTDIR=<span class="c-var">$LFS</span> install
+
+<span class="c-out"># Remove static libraries not needed at runtime</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">rm</span> <span class="c-flag">-v</span> <span class="c-var">$LFS</span>/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}</code></pre>
+  </section>
+
+  <!-- CHAPTER 11: GCC PASS 2 -->
+  <section class="chapter" id="gcc2">
+    <div class="chapter-num">Chapter 11</div>
+    <h2>GCC — Pass 2</h2>
+    <p>The full GCC, with C, C++, shared libraries, threading support, and all standard features enabled. This replaces the minimal pass-1 compiler.</p>
+
+    <pre><code><span class="c-lfs">lfs$</span> <span class="c-cmd">cd</span> <span class="c-var">$LFS</span>/sources/gcc-15.2.0
+<span class="c-lfs">lfs$</span> <span class="c-cmd">rm</span> <span class="c-flag">-rf</span> build && <span class="c-cmd">mkdir</span> build && <span class="c-cmd">cd</span> build
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">../configure</span>                           <span class="c-flag">\</span>
+    <span class="c-flag">--build=</span>$(../config.guess)              <span class="c-flag">\</span>
+    <span class="c-flag">--host=</span><span class="c-var">$LFS_TGT</span>                         <span class="c-flag">\</span>
+    <span class="c-flag">--target=</span><span class="c-var">$LFS_TGT</span>                       <span class="c-flag">\</span>
+    LDFLAGS_FOR_TARGET=-L<span class="c-var">$PWD</span>/<span class="c-var">$LFS_TGT</span>/libgcc  <span class="c-flag">\</span>
+    <span class="c-flag">--prefix=</span>/usr                           <span class="c-flag">\</span>
+    <span class="c-flag">--with-build-sysroot=</span><span class="c-var">$LFS</span>               <span class="c-flag">\</span>
+    <span class="c-flag">--enable-default-pie</span>                    <span class="c-flag">\</span>
+    <span class="c-flag">--enable-default-ssp</span>                    <span class="c-flag">\</span>
+    <span class="c-flag">--disable-nls</span>                           <span class="c-flag">\</span>
+    <span class="c-flag">--disable-multilib</span>                      <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libatomic</span>                     <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libgomp</span>                       <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libquadmath</span>                   <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libsanitizer</span>                  <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libssp</span>                        <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libvtv</span>                        <span class="c-flag">\</span>
+    <span class="c-flag">--enable-languages=</span>c,c++
+
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">make</span> DESTDIR=<span class="c-var">$LFS</span> install
+
+<span class="c-out"># Create a versioned cc symlink</span>
+<span class="c-lfs">lfs$</span> <span class="c-cmd">ln</span> <span class="c-flag">-sv</span> gcc <span class="c-var">$LFS</span>/usr/bin/cc</code></pre>
+
+    <div class="tip">
+      <strong>Toolchain complete</strong>
+      You now have a self-hosting cross-compilation toolchain in <code>$LFS</code>. Everything from this point forward is compiled using tools that live inside the target system, not the host.
+    </div>
+  </section>
+
+  <!-- CHAPTER 12: CHROOT -->
+  <section class="chapter" id="chroot">
+    <div class="chapter-num">Chapter 12</div>
+    <h2>Entering the Chroot Environment</h2>
+    <p>From here we switch from building <em>for</em> the target system to building <em>inside</em> it. The chroot gives us an isolated environment where the new system's tools are the only tools available.</p>
+
+    <h3>Create the Full Directory Structure</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/{dev,proc,sys,run}
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/usr/{bin,lib,sbin}
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/{boot,home,mnt,opt,srv}
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/etc/{opt,sysconfig}
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/lib/firmware
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/media/{floppy,cdrom}
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/usr/{include,src}
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/usr/share/{color,dict,doc,info,locale,man}
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/usr/share/{misc,terminfo,zoneinfo}
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/usr/share/man/man{1..8}
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/var/{cache,local,log,mail,opt,spool}
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> <span class="c-var">$LFS</span>/var/lib/{color,misc,locate}
+
+<span class="c-out"># Create FHS compatibility symlinks</span>
+<span class="c-root">root#</span> for d in bin lib sbin; do
+  ln <span class="c-flag">-sv</span> usr/<span class="c-var">$d</span> <span class="c-var">$LFS</span>/<span class="c-var">$d</span>
+done
+<span class="c-root">root#</span> <span class="c-cmd">ln</span> <span class="c-flag">-sv</span> usr/lib <span class="c-var">$LFS</span>/lib64
+
+<span class="c-root">root#</span> <span class="c-cmd">install</span> <span class="c-flag">-dv</span> <span class="c-flag">-m</span> 0750 <span class="c-var">$LFS</span>/root
+<span class="c-root">root#</span> <span class="c-cmd">install</span> <span class="c-flag">-dv</span> <span class="c-flag">-m</span> 1777 <span class="c-var">$LFS</span>/tmp <span class="c-var">$LFS</span>/var/tmp</code></pre>
+
+    <h3>Mount Virtual Filesystems</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">mount</span> <span class="c-flag">-v</span> <span class="c-flag">--bind</span> /dev <span class="c-var">$LFS</span>/dev
+<span class="c-root">root#</span> <span class="c-cmd">mount</span> <span class="c-flag">-vt</span> devpts devpts <span class="c-flag">-o</span> gid=5,mode=0620 <span class="c-var">$LFS</span>/dev/pts
+<span class="c-root">root#</span> <span class="c-cmd">mount</span> <span class="c-flag">-vt</span> proc proc <span class="c-var">$LFS</span>/proc
+<span class="c-root">root#</span> <span class="c-cmd">mount</span> <span class="c-flag">-vt</span> sysfs sysfs <span class="c-var">$LFS</span>/sys
+<span class="c-root">root#</span> <span class="c-cmd">mount</span> <span class="c-flag">-vt</span> tmpfs tmpfs <span class="c-var">$LFS</span>/run
+<span class="c-root">root#</span> if [ <span class="c-flag">-h</span> <span class="c-var">$LFS</span>/dev/shm ]; then
+  <span class="c-cmd">install</span> <span class="c-flag">-v</span> <span class="c-flag">-d</span> <span class="c-flag">-m</span> 1777 <span class="c-var">$LFS</span>$(realpath /dev/shm)
+else
+  <span class="c-cmd">mount</span> <span class="c-flag">-vt</span> tmpfs <span class="c-flag">-o</span> nosuid,nodev tmpfs <span class="c-var">$LFS</span>/dev/shm
+fi</code></pre>
+
+    <h3>Enter the Chroot</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">chroot</span> <span class="c-string">"$LFS"</span> /usr/bin/env -i   <span class="c-flag">\</span>
+    HOME=/root                         <span class="c-flag">\</span>
+    TERM=<span class="c-string">"$TERM"</span>                      <span class="c-flag">\</span>
+    PS1=<span class="c-string">'(lfs chroot) \u:\w\$ '</span>       <span class="c-flag">\</span>
+    PATH=/usr/bin:/usr/sbin            <span class="c-flag">\</span>
+    MAKEFLAGS=<span class="c-string">"-j$(nproc)"</span>             <span class="c-flag">\</span>
+    TESTSUITEFLAGS=<span class="c-string">"-j$(nproc)"</span>       <span class="c-flag">\</span>
+    /bin/bash <span class="c-flag">--login</span></code></pre>
+
+    <p>The prompt changes to <code>(lfs chroot)</code>. You are now inside your new system.</p>
+  </section>
+
+  <!-- CHAPTER 13: CORE PACKAGES -->
+  <section class="chapter" id="core-pkgs">
+    <div class="chapter-num">Chapter 13</div>
+    <h2>Core Package Builds</h2>
+    <p>Inside the chroot, we now build all the essential packages that make up a usable system. Below is the <strong>required build order</strong> — dependencies flow downward.</p>
+
+    <div class="note">
+      <strong>Inside chroot from here on</strong>
+      All commands in this chapter run inside the chroot environment entered in Chapter 12.
+    </div>
+
+    <h3>1. man-pages</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">tar</span> <span class="c-flag">-xf</span> man-pages-6.17.tar.xz
+<span class="c-root">root#</span> <span class="c-cmd">rm</span> <span class="c-flag">-v</span> man-pages-6.17/man3/crypt*.3
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-C</span> man-pages-6.17 prefix=/usr install</code></pre>
+
+    <h3>2. zlib</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> zlib-1.3.2 && <span class="c-cmd">./configure</span> <span class="c-flag">--prefix=</span>/usr
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span> && <span class="c-cmd">make</span> install
+<span class="c-root">root#</span> <span class="c-cmd">rm</span> <span class="c-flag">-fv</span> /usr/lib/libz.a</code></pre>
+
+    <h3>3. bzip2</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> bzip2-1.0.8
+<span class="c-root">root#</span> <span class="c-cmd">patch</span> <span class="c-flag">-Np1</span> <span class="c-flag">-i</span> ../bzip2-1.0.8-install_docs-1.patch
+<span class="c-root">root#</span> <span class="c-cmd">sed</span> <span class="c-flag">-i</span> <span class="c-string">'s@\(ln -s -f \)$(PREFIX)/bin/@\1@'</span> Makefile
+<span class="c-root">root#</span> <span class="c-cmd">sed</span> <span class="c-flag">-i</span> <span class="c-string">"s@(PREFIX)/man@(PREFIX)/share/man@g"</span> Makefile
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-f</span> Makefile-libbz2_so
+<span class="c-root">root#</span> <span class="c-cmd">make</span> clean && <span class="c-cmd">make</span> && <span class="c-cmd">make</span> PREFIX=/usr install
+<span class="c-root">root#</span> <span class="c-cmd">cp</span> <span class="c-flag">-av</span> libbz2.so.* /usr/lib && <span class="c-cmd">ln</span> <span class="c-flag">-sv</span> libbz2.so.1.0.8 /usr/lib/libbz2.so</code></pre>
+
+    <h3>4. xz</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> xz-5.8.2
+<span class="c-root">root#</span> <span class="c-cmd">./configure</span> <span class="c-flag">--prefix=</span>/usr <span class="c-flag">--disable-static</span> <span class="c-flag">--docdir=</span>/usr/share/doc/xz-5.8.2
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span> && <span class="c-cmd">make</span> install</code></pre>
+
+    <h3>5. ncurses</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> ncurses-6.6
+<span class="c-root">root#</span> <span class="c-cmd">./configure</span>                        <span class="c-flag">\</span>
+    <span class="c-flag">--prefix=</span>/usr                      <span class="c-flag">\</span>
+    <span class="c-flag">--mandir=</span>/usr/share/man            <span class="c-flag">\</span>
+    <span class="c-flag">--with-shared</span>                      <span class="c-flag">\</span>
+    <span class="c-flag">--without-debug</span>                    <span class="c-flag">\</span>
+    <span class="c-flag">--without-normal</span>                   <span class="c-flag">\</span>
+    <span class="c-flag">--with-cxx-shared</span>                  <span class="c-flag">\</span>
+    <span class="c-flag">--enable-pc-files</span>                  <span class="c-flag">\</span>
+    <span class="c-flag">--with-pkg-config-libdir=</span>/usr/lib/pkgconfig
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span> && <span class="c-cmd">make</span> install
+<span class="c-root">root#</span> <span class="c-cmd">ln</span> <span class="c-flag">-sv</span> libncursesw.so /usr/lib/libncurses.so</code></pre>
+
+    <h3>6. readline</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> readline-8.3
+<span class="c-root">root#</span> <span class="c-cmd">./configure</span> <span class="c-flag">--prefix=</span>/usr          <span class="c-flag">\</span>
+                 <span class="c-flag">--disable-static</span>        <span class="c-flag">\</span>
+                 <span class="c-flag">--with-curses</span>           <span class="c-flag">\</span>
+                 <span class="c-flag">--docdir=</span>/usr/share/doc/readline-8.3
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span> SHLIB_LIBS=<span class="c-string">"-lncursesw"</span>
+<span class="c-root">root#</span> <span class="c-cmd">make</span> install SHLIB_LIBS=<span class="c-string">"-lncursesw"</span></code></pre>
+
+    <h3>7. bash</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> bash-5.3
+<span class="c-root">root#</span> <span class="c-cmd">./configure</span>                         <span class="c-flag">\</span>
+    <span class="c-flag">--prefix=</span>/usr                       <span class="c-flag">\</span>
+    <span class="c-flag">--without-bash-malloc</span>               <span class="c-flag">\</span>
+    <span class="c-flag">--with-installed-readline</span>           <span class="c-flag">\</span>
+    <span class="c-flag">--docdir=</span>/usr/share/doc/bash-5.3
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span> && <span class="c-cmd">make</span> install
+<span class="c-root">root#</span> <span class="c-cmd">ln</span> <span class="c-flag">-sv</span> bash /usr/bin/sh</code></pre>
+
+    <h3>8. coreutils</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> coreutils-9.10
+<span class="c-root">root#</span> <span class="c-cmd">patch</span> <span class="c-flag">-Np1</span> <span class="c-flag">-i</span> ../coreutils-9.10-i18n-2.patch
+<span class="c-root">root#</span> <span class="c-cmd">./configure</span>                                   <span class="c-flag">\</span>
+    <span class="c-flag">--prefix=</span>/usr                                 <span class="c-flag">\</span>
+    <span class="c-flag">--enable-no-install-program=</span>kill,uptime       <span class="c-flag">\</span>
+    <span class="c-flag">--docdir=</span>/usr/share/doc/coreutils-9.10
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span> && <span class="c-cmd">make</span> install
+<span class="c-root">root#</span> <span class="c-cmd">mv</span> <span class="c-flag">-v</span> /usr/bin/chroot /usr/sbin</code></pre>
+  </section>
+
+  <!-- CHAPTER 14: SYSTEM PACKAGES -->
+  <section class="chapter" id="system-pkgs">
+    <div class="chapter-num">Chapter 14</div>
+    <h2>System-Level Packages</h2>
+    <p>The following packages form the system infrastructure layer. Build them in order.</p>
+
+    <h3>util-linux</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> util-linux-2.41.3
+<span class="c-root">root#</span> <span class="c-cmd">./configure</span>                             <span class="c-flag">\</span>
+    ADJTIME_PATH=/var/lib/hwclock/adjtime    <span class="c-flag">\</span>
+    <span class="c-flag">--bindir=</span>/usr/bin                        <span class="c-flag">\</span>
+    <span class="c-flag">--libdir=</span>/usr/lib                        <span class="c-flag">\</span>
+    <span class="c-flag">--runstatedir=</span>/run                       <span class="c-flag">\</span>
+    <span class="c-flag">--sbindir=</span>/usr/sbin                      <span class="c-flag">\</span>
+    <span class="c-flag">--disable-chfn-chsh</span>                     <span class="c-flag">\</span>
+    <span class="c-flag">--disable-login</span>                         <span class="c-flag">\</span>
+    <span class="c-flag">--disable-nologin</span>                       <span class="c-flag">\</span>
+    <span class="c-flag">--disable-su</span>                            <span class="c-flag">\</span>
+    <span class="c-flag">--disable-setpriv</span>                       <span class="c-flag">\</span>
+    <span class="c-flag">--disable-runuser</span>                       <span class="c-flag">\</span>
+    <span class="c-flag">--disable-pylibmount</span>                    <span class="c-flag">\</span>
+    <span class="c-flag">--disable-liblastlog2</span>                   <span class="c-flag">\</span>
+    <span class="c-flag">--disable-static</span>                        <span class="c-flag">\</span>
+    <span class="c-flag">--without-python</span>                        <span class="c-flag">\</span>
+    <span class="c-flag">--docdir=</span>/usr/share/doc/util-linux-2.41.3
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span> && <span class="c-cmd">make</span> install</code></pre>
+
+    <h3>e2fsprogs</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> e2fsprogs-1.47.3 && <span class="c-cmd">mkdir</span> build && <span class="c-cmd">cd</span> build
+<span class="c-root">root#</span> <span class="c-cmd">../configure</span>                        <span class="c-flag">\</span>
+    <span class="c-flag">--prefix=</span>/usr                       <span class="c-flag">\</span>
+    <span class="c-flag">--sysconfdir=</span>/etc                   <span class="c-flag">\</span>
+    <span class="c-flag">--enable-elf-shlibs</span>                 <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libblkid</span>                  <span class="c-flag">\</span>
+    <span class="c-flag">--disable-libuuid</span>                   <span class="c-flag">\</span>
+    <span class="c-flag">--disable-uuidd</span>                     <span class="c-flag">\</span>
+    <span class="c-flag">--disable-fsck</span>
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span> && <span class="c-cmd">make</span> install
+<span class="c-root">root#</span> <span class="c-cmd">rm</span> <span class="c-flag">-fv</span> /usr/lib/{libcom_err,libe2p,libext2fs,libss}.a</code></pre>
+
+    <h3>shadow</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> shadow-4.19.3
+<span class="c-root">root#</span> <span class="c-cmd">sed</span> <span class="c-flag">-i</span> <span class="c-string">'s/groups$(EXEEXT) //'</span> src/Makefile.in
+<span class="c-root">root#</span> find man -name Makefile.in -exec sed -i <span class="c-string">'s/groups\.1 //'</span> {} \;
+<span class="c-root">root#</span> <span class="c-cmd">./configure</span>                         <span class="c-flag">\</span>
+    <span class="c-flag">--sysconfdir=</span>/etc                   <span class="c-flag">\</span>
+    <span class="c-flag">--disable-static</span>                    <span class="c-flag">\</span>
+    <span class="c-flag">--with-{b,y}crypt</span>                   <span class="c-flag">\</span>
+    <span class="c-flag">--with-group-name-max-length=</span>32
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span> && <span class="c-cmd">make</span> exec_prefix=/usr install
+<span class="c-root">root#</span> <span class="c-cmd">pwconv</span> && <span class="c-cmd">grpconv</span>
+<span class="c-root">root#</span> <span class="c-cmd">passwd</span> root</code></pre>
+
+    <h3>procps-ng</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> procps-ng-4.0.6
+<span class="c-root">root#</span> <span class="c-cmd">./configure</span>                        <span class="c-flag">\</span>
+    <span class="c-flag">--prefix=</span>/usr                      <span class="c-flag">\</span>
+    <span class="c-flag">--docdir=</span>/usr/share/doc/procps-ng-4.0.6 <span class="c-flag">\</span>
+    <span class="c-flag">--disable-static</span>                   <span class="c-flag">\</span>
+    <span class="c-flag">--disable-kill</span>                     <span class="c-flag">\</span>
+    <span class="c-flag">--enable-watch8bit</span>                 <span class="c-flag">\</span>
+    <span class="c-flag">--with-systemd</span>
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span> && <span class="c-cmd">make</span> install</code></pre>
+
+    <h3>Remaining Utilities</h3>
+    <p>Build the following packages using the standard pattern <code>./configure --prefix=/usr && make -j$(nproc) && make install</code>. Refer to each project's own README for flags specific to your use case:</p>
+    <ul>
+      <li><strong>grep 3.12</strong> — <code>--prefix=/usr</code></li>
+      <li><strong>gawk 5.3.2</strong> — <code>--prefix=/usr</code></li>
+      <li><strong>sed 4.9</strong> — <code>--prefix=/usr</code></li>
+      <li><strong>tar 1.35</strong> — <code>--prefix=/usr</code></li>
+      <li><strong>gzip 1.14</strong> — <code>--prefix=/usr</code></li>
+      <li><strong>make 4.4.1</strong> — <code>--prefix=/usr</code></li>
+      <li><strong>patch 2.8</strong> — <code>--prefix=/usr</code></li>
+      <li><strong>findutils 4.10.0</strong> — <code>--prefix=/usr --localstatedir=/var/lib/locate</code></li>
+      <li><strong>diffutils 3.12</strong> — <code>--prefix=/usr</code></li>
+      <li><strong>file 5.46</strong> — <code>--prefix=/usr</code></li>
+    </ul>
+  </section>
+
+  <!-- CHAPTER 15: KERNEL -->
+  <section class="chapter" id="kernel">
+    <div class="chapter-num">Chapter 15</div>
+    <h2>Building the Linux Kernel 7.1.5</h2>
+    <p>The kernel is the final major compile. We use <code>make defconfig</code> as a starting point and then enable a minimal set of options required for a bootable system.</p>
+
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> /sources/linux-7.1.5
+<span class="c-root">root#</span> <span class="c-cmd">make</span> mrproper
+
+<span class="c-out"># Start with defconfig for your architecture</span>
+<span class="c-root">root#</span> <span class="c-cmd">make</span> defconfig
+
+<span class="c-out"># Open the interactive config menu (optional, recommended for learning)</span>
+<span class="c-root">root#</span> <span class="c-cmd">make</span> menuconfig</code></pre>
+
+    <h3>Essential Kernel Options</h3>
+    <p>Use <kbd>menuconfig</kbd> to verify or enable these options. The <code>CONFIG_</code> names are searchable with <kbd>/</kbd>:</p>
+    <table class="pkg-table">
+      <thead><tr><th>Config Symbol</th><th>Setting</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td class="pkg-name">CONFIG_EXPERT</td><td class="pkg-ver">y</td><td class="pkg-role">Unlocks advanced options</td></tr>
+        <tr><td class="pkg-name">CONFIG_SYSFS</td><td class="pkg-ver">y</td><td class="pkg-role">Required for udev/systemd</td></tr>
+        <tr><td class="pkg-name">CONFIG_PROC_FS</td><td class="pkg-ver">y</td><td class="pkg-role">Required for /proc</td></tr>
+        <tr><td class="pkg-name">CONFIG_TMPFS</td><td class="pkg-ver">y</td><td class="pkg-role">Required for /tmp, /run</td></tr>
+        <tr><td class="pkg-name">CONFIG_UNIX</td><td class="pkg-ver">y</td><td class="pkg-role">Unix domain sockets (systemd)</td></tr>
+        <tr><td class="pkg-name">CONFIG_INOTIFY_USER</td><td class="pkg-ver">y</td><td class="pkg-role">systemd file watching</td></tr>
+        <tr><td class="pkg-name">CONFIG_EXT4_FS</td><td class="pkg-ver">y</td><td class="pkg-role">Root filesystem</td></tr>
+        <tr><td class="pkg-name">CONFIG_CGROUPS</td><td class="pkg-ver">y</td><td class="pkg-role">systemd cgroup management</td></tr>
+        <tr><td class="pkg-name">CONFIG_NAMESPACES</td><td class="pkg-ver">y</td><td class="pkg-role">systemd namespace isolation</td></tr>
+        <tr><td class="pkg-name">CONFIG_NET</td><td class="pkg-ver">y</td><td class="pkg-role">Networking</td></tr>
+        <tr><td class="pkg-name">CONFIG_INET</td><td class="pkg-ver">y</td><td class="pkg-role">TCP/IP stack</td></tr>
+        <tr><td class="pkg-name">CONFIG_BLK_DEV_SD</td><td class="pkg-ver">y</td><td class="pkg-role">SCSI/SATA disk support</td></tr>
+        <tr><td class="pkg-name">CONFIG_ATA</td><td class="pkg-ver">y</td><td class="pkg-role">ATA controllers</td></tr>
+        <tr><td class="pkg-name">CONFIG_EFI_STUB</td><td class="pkg-ver">y</td><td class="pkg-role">UEFI boot support</td></tr>
+      </tbody>
+    </table>
+
+    <pre><code><span class="c-out"># Build the kernel, modules, and install</span>
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span>
+<span class="c-root">root#</span> <span class="c-cmd">make</span> modules_install
+
+<span class="c-out"># Install the kernel image and System.map</span>
+<span class="c-root">root#</span> <span class="c-cmd">cp</span> <span class="c-flag">-iv</span> arch/x86/boot/bzImage /boot/vmlinuz-7.1.5-forge
+<span class="c-root">root#</span> <span class="c-cmd">cp</span> <span class="c-flag">-iv</span> System.map /boot/System.map-7.1.5
+<span class="c-root">root#</span> <span class="c-cmd">cp</span> <span class="c-flag">-iv</span> .config /boot/config-7.1.5</code></pre>
+
+    <div class="tip">
+      <strong>Kernel modules</strong>
+      For a VM, you can safely build most things into the kernel (<code>=y</code>) rather than as modules (<code>=m</code>). This simplifies the initramfs situation considerably.
+    </div>
+  </section>
+
+  <!-- CHAPTER 16: SYSTEM CONFIG -->
+  <section class="chapter" id="sysconfig">
+    <div class="chapter-num">Chapter 16</div>
+    <h2>System Configuration Files</h2>
+
+    <h3>/etc/fstab</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/fstab <span class="c-string">&lt;&lt; "EOF"
+# &lt;device&gt;        &lt;mountpoint&gt; &lt;type&gt;  &lt;options&gt;         &lt;dump&gt; &lt;pass&gt;
+/dev/sdb3          /            ext4    defaults           1      1
+/dev/sdb2          /boot        ext4    defaults           0      2
+/dev/sdb1          /boot/efi    vfat    umask=0077         0      1
+tmpfs              /tmp         tmpfs   defaults,nosuid,nodev 0   0
+EOF</span></code></pre>
+
+    <div class="note">
+      <strong>Use UUIDs in production</strong>
+      Replace <code>/dev/sdbX</code> with UUIDs from <code>blkid</code> to ensure correct mounting regardless of device enumeration order. Example: <code>UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code>
+    </div>
+
+    <h3>Hostname</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">echo</span> <span class="c-string">"forge"</span> > /etc/hostname</code></pre>
+
+    <h3>Hosts File</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/hosts <span class="c-string">&lt;&lt; "EOF"
+127.0.0.1  localhost
+127.0.1.1  forge
+::1        localhost ip6-localhost ip6-loopback
+EOF</span></code></pre>
+
+    <h3>Timezone</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">ln</span> <span class="c-flag">-sfv</span> /usr/share/zoneinfo/UTC /etc/localtime
+<span class="c-out"># Or for a specific timezone:</span>
+<span class="c-root">root#</span> <span class="c-cmd">ln</span> <span class="c-flag">-sfv</span> /usr/share/zoneinfo/Asia/Kolkata /etc/localtime</code></pre>
+
+    <h3>Locale</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">localedef</span> <span class="c-flag">-i</span> en_US <span class="c-flag">-f</span> UTF-8 en_US.UTF-8
+<span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/locale.conf <span class="c-string">&lt;&lt; "EOF"
+LANG=en_US.UTF-8
+EOF</span></code></pre>
+
+    <h3>Input Key Bindings</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/inputrc <span class="c-string">&lt;&lt; "EOF"
+set horizontal-scroll-mode Off
+set meta-flag On
+set input-meta On
+set convert-meta Off
+set output-meta On
+set bell-style none
+"\eOd": backward-word
+"\eOc": forward-word
+"\e[1~": beginning-of-line
+"\e[4~": end-of-line
+"\e[5~": beginning-of-history
+"\e[6~": end-of-history
+"\e[3~": delete-char
+"\e[2~": quoted-insert
+EOF</span></code></pre>
+
+    <h3>Shells</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/shells <span class="c-string">&lt;&lt; "EOF"
+/bin/sh
+/bin/bash
+EOF</span></code></pre>
+
+    <h3>Placeholder OS identity</h3>
+    <p>Minimal stub so the system is not anonymous before Chapter 20. Replace with the full Forge kit later.</p>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/os-release <span class="c-string">&lt;&lt; "EOF"
+NAME="Forge Linux"
+PRETTY_NAME="Forge Linux 0.1.0 (anvil)"
+ID=forge
+VERSION_ID="0.1.0"
+VERSION_CODENAME=anvil
+HOME_URL="https://forge.example/"
+EOF</span>
+<span class="c-root">root#</span> <span class="c-cmd">ln</span> <span class="c-flag">-sfv</span> /etc/os-release /usr/lib/os-release</code></pre>
+  </section>
+
+  <!-- CHAPTER 17: SYSTEMD -->
+  <section class="chapter" id="systemd">
+    <div class="chapter-num">Chapter 17</div>
+    <h2>systemd 259.1</h2>
+    <p>systemd replaces SysVinit and provides the init system, service manager, journal, udev, network management, and much more. It has a significant number of dependencies — build them first.</p>
+
+    <h3>Dependencies to build first</h3>
+    <ol class="steps">
+      <li><strong>libcap 2.77</strong> — POSIX capabilities library (configure with <code>--prefix=/usr --disable-static</code>)</li>
+      <li><strong>libxcrypt 4.5.2</strong> — Modern crypt() implementation for password hashing</li>
+      <li><strong>cryptsetup 2.8.0</strong> — Disk encryption (optional but recommended)</li>
+      <li><strong>kmod 34.2</strong> — Kernel module loading (<code>modprobe</code>, <code>lsmod</code>)</li>
+      <li><strong>libunistring 1.3</strong> — Unicode string library</li>
+      <li><strong>libffi 3.5.2</strong> — Foreign function interface</li>
+      <li><strong>Python 3.14.3</strong> — Required by systemd's test suite and tools</li>
+    </ol>
+
+    <h3>Build systemd with Meson</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> /sources/systemd-259.1
+<span class="c-root">root#</span> <span class="c-cmd">pip3 install</span> jinja2 pyelftools
+
+<span class="c-root">root#</span> <span class="c-cmd">meson setup</span> <span class="c-flag">--prefix=</span>/usr              <span class="c-flag">\</span>
+             <span class="c-flag">--buildtype=</span>release            <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>default-dnssec=no             <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>firstboot=false               <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>install-tests=false           <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>ldconfig=false                 <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>man=disabled                   <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>sysusers=false                 <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>rpmmacrosdir=no                <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>homed=disabled                 <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>userdb=false                   <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>mode=release                   <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>pamconfdir=no                  <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>dev-kvm-mode=0660              <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>nobody-group=nogroup           <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>sysupdate=disabled             <span class="c-flag">\</span>
+             <span class="c-flag">-D</span>ukify=disabled                 <span class="c-flag">\</span>
+             build
+
+<span class="c-root">root#</span> <span class="c-cmd">ninja</span> <span class="c-flag">-C</span> build && <span class="c-cmd">ninja</span> <span class="c-flag">-C</span> build install</code></pre>
+
+    <h3>Post-install Configuration</h3>
+    <pre><code><span class="c-out"># Disable graphical login (not needed for minimal system)</span>
+<span class="c-root">root#</span> <span class="c-cmd">systemctl</span> set-default multi-user.target
+
+<span class="c-out"># Create machine-id (required by systemd-journald)</span>
+<span class="c-root">root#</span> <span class="c-cmd">systemd-machine-id-setup</span>
+
+<span class="c-out"># Enable basic services</span>
+<span class="c-root">root#</span> <span class="c-cmd">systemctl</span> enable systemd-networkd
+<span class="c-root">root#</span> <span class="c-cmd">systemctl</span> enable systemd-resolved</code></pre>
+
+    <h3>Network Configuration via systemd-networkd</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/systemd/network/10-eth0.network <span class="c-string">&lt;&lt; "EOF"
+[Match]
+Name=eth0
+
+[Network]
+DHCP=yes
+DNS=1.1.1.1
+DNS=8.8.8.8
+EOF</span></code></pre>
+  </section>
+
+  <!-- CHAPTER 18: GRUB -->
+  <section class="chapter" id="grub">
+    <div class="chapter-num">Chapter 18</div>
+    <h2>GRUB 2.14 — The Bootloader</h2>
+    <p>GRUB (Grand Unified Bootloader) is what the firmware hands control to after POST. It then loads the kernel and passes it an initial set of parameters.</p>
+
+    <h3>Build GRUB</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> /sources/grub-2.14
+
+<span class="c-root">root#</span> <span class="c-cmd">./configure</span>                           <span class="c-flag">\</span>
+    <span class="c-flag">--prefix=</span>/usr                         <span class="c-flag">\</span>
+    <span class="c-flag">--sysconfdir=</span>/etc                     <span class="c-flag">\</span>
+    <span class="c-flag">--disable-efiemu</span>                      <span class="c-flag">\</span>
+    <span class="c-flag">--enable-grub-mkfont</span>                  <span class="c-flag">\</span>
+    <span class="c-flag">--with-platform=</span>efi                   <span class="c-flag">\</span>
+    <span class="c-flag">--target=</span>x86_64                       <span class="c-flag">\</span>
+    <span class="c-flag">--disable-werror</span>
+
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span> && <span class="c-cmd">make</span> install</code></pre>
+
+    <h3>Install GRUB to the ESP</h3>
+    <pre><code><span class="c-out"># UEFI install (recommended for all modern systems)</span>
+<span class="c-root">root#</span> <span class="c-cmd">grub-install</span>                          <span class="c-flag">\</span>
+    <span class="c-flag">--target=</span>x86_64-efi                   <span class="c-flag">\</span>
+    <span class="c-flag">--efi-directory=</span>/boot/efi             <span class="c-flag">\</span>
+    <span class="c-flag">--bootloader-id=</span>LFS                   <span class="c-flag">\</span>
+    <span class="c-flag">--recheck</span>
+
+<span class="c-out"># Legacy BIOS install (if your VM is not UEFI)</span>
+<span class="c-root">root#</span> <span class="c-cmd">grub-install</span> <span class="c-flag">--target=</span>i386-pc /dev/sdb</code></pre>
+
+    <h3>Generate grub.cfg</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /boot/grub/grub.cfg <span class="c-string">&lt;&lt; "EOF"
+# GRUB 2 configuration for Forge Linux
+set default=0
+set timeout=5
+
+insmod part_gpt
+insmod ext2
+insmod fat
+
+# Load EFI video support
+if [ x$grub_platform = xxefi ]; then
+  insmod linuxefi
+fi
+
+menuentry "Forge Linux 0.1 — Linux 7.1.5" {
+    linux   /boot/vmlinuz-7.1.5-forge root=/dev/sdb3 rw quiet
+    # For UEFI: linuxefi /boot/vmlinuz-7.1.5-forge root=/dev/sdb3 rw quiet
+}
+EOF</span></code></pre>
+
+    <div class="tip">
+      <strong>UUID-based root</strong>
+      Replace <code>root=/dev/sdb3</code> with <code>root=UUID=$(blkid -s UUID -o value /dev/sdb3)</code> to make the config portable across disk re-enumeration.
+    </div>
+  </section>
+
+  <!-- CHAPTER 19: FIRST BOOT -->
+  <section class="chapter" id="boot">
+    <div class="chapter-num">Chapter 19</div>
+    <h2>First Boot</h2>
+    <p>Before rebooting, exit the chroot cleanly and unmount all virtual filesystems.</p>
+
+    <h3>Exit and Unmount</h3>
+    <pre><code><span class="c-out"># Inside the chroot</span>
+<span class="c-root">root#</span> <span class="c-cmd">logout</span>
+
+<span class="c-out"># Back on the Fedora host</span>
+<span class="c-root">root#</span> <span class="c-cmd">umount</span> <span class="c-flag">-v</span> <span class="c-var">$LFS</span>/dev/pts
+<span class="c-root">root#</span> <span class="c-cmd">umount</span> <span class="c-flag">-v</span> <span class="c-var">$LFS</span>/dev
+<span class="c-root">root#</span> <span class="c-cmd">umount</span> <span class="c-flag">-v</span> <span class="c-var">$LFS</span>/run
+<span class="c-root">root#</span> <span class="c-cmd">umount</span> <span class="c-flag">-v</span> <span class="c-var">$LFS</span>/proc
+<span class="c-root">root#</span> <span class="c-cmd">umount</span> <span class="c-flag">-v</span> <span class="c-var">$LFS</span>/sys
+<span class="c-root">root#</span> <span class="c-cmd">umount</span> <span class="c-flag">-v</span> <span class="c-var">$LFS</span>/boot/efi
+<span class="c-root">root#</span> <span class="c-cmd">umount</span> <span class="c-flag">-v</span> <span class="c-var">$LFS</span>/boot
+<span class="c-root">root#</span> <span class="c-cmd">umount</span> <span class="c-flag">-v</span> <span class="c-var">$LFS</span></code></pre>
+
+    <h3>Boot the New System</h3>
+    <ol class="steps">
+      <li>In VirtualBox/GNOME Boxes, change the VM boot order to boot from <strong>/dev/sdb</strong> first</li>
+      <li>Reboot the virtual machine</li>
+      <li>GRUB should appear with the <em>"Forge Linux 0.1 — Linux 7.1.5"</em> menu entry</li>
+      <li>Select it and watch the kernel boot messages</li>
+      <li>systemd should hand off to a login prompt on <code>tty1</code></li>
+      <li>Log in as <code>root</code> with the password you set in Chapter 14</li>
+    </ol>
+
+    <h3>Verify the System</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">uname</span> <span class="c-flag">-a</span>
+<span class="c-out">Linux forge 7.1.5 #1 SMP ... x86_64 GNU/Linux</span>
+
+<span class="c-root">root#</span> <span class="c-cmd">cat</span> /etc/os-release
+<span class="c-out">NAME="Forge Linux"
+PRETTY_NAME="Forge Linux 0.1.0 (anvil)"
+ID=forge
+VERSION_ID="0.1.0"</span>
+
+<span class="c-root">root#</span> <span class="c-cmd">systemctl</span> status
+<span class="c-out">● forge
+    State: running
+    Units: 168 loaded (...)
+    Jobs: 0 queued
+  Failed: 0 units</span>
+
+<span class="c-root">root#</span> <span class="c-cmd">ip</span> link
+<span class="c-root">root#</span> <span class="c-cmd">ping</span> <span class="c-flag">-c3</span> 1.1.1.1</code></pre>
+
+    <div class="tip">
+      <strong>Congratulations</strong>
+      You have built a complete Linux system from source code. Every binary on this system was compiled by tools you compiled, linked against a C library you compiled, running on a kernel you configured and built. That's the full stack.
+    </div>
+
+    <h3>What Next?</h3>
+    <p>Your system boots. Now make it <strong>yours</strong> — continue with <a href="#branding">Chapters 20–28</a>:</p>
+    <ul>
+      <li><strong>Brand it</strong> — identity kit, os-release, MOTD, GRUB theme</li>
+      <li><strong>Package manager</strong> — ports tree or pacman/rpm path</li>
+      <li><strong>Ship media</strong> — live ISO, qcow2, installer</li>
+      <li><strong>Release process</strong> — signing, SBOM, versioning</li>
+      <li><strong>Userspace</strong> — SSH, desktop via <a href="https://www.linuxfromscratch.org/blfs/">BLFS</a></li>
+    </ul>
+  </section>
+
+  <!-- CHAPTER 20: BRANDING -->
+  <section class="chapter" id="branding">
+    <div class="chapter-num">Chapter 20</div>
+    <h2>Brand Identity — Own Your Distro</h2>
+    <p>A bootable rootfs is not yet a distribution. A distribution has a <strong>name people say out loud</strong>, a legal identity, consistent strings in every UI surface, and a versioning story. This chapter defines <strong>Forge Linux</strong> as the default brand for the rest of the guide. Replace the kit once; reuse it everywhere.</p>
+
+    <div class="brand-card">
+      <div class="brand-lockup">
+        <div class="brand-mark">F</div>
+        <div>
+          <div class="brand-name">Forge <span>Linux</span></div>
+          <div class="brand-tagline">BUILT FROM SOURCE · OWNED BY YOU</div>
+        </div>
+      </div>
+      <div class="two-col" style="position:relative">
+        <div>
+          <h4 style="margin-top:0">Identity fields</h4>
+          <table class="pkg-table">
+            <thead><tr><th>Field</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td class="pkg-name">NAME</td><td class="pkg-ver">Forge Linux</td></tr>
+              <tr><td class="pkg-name">ID</td><td class="pkg-ver">forge</td></tr>
+              <tr><td class="pkg-name">VERSION_ID</td><td class="pkg-ver">0.1.0</td></tr>
+              <tr><td class="pkg-name">VERSION_CODENAME</td><td class="pkg-ver">anvil</td></tr>
+              <tr><td class="pkg-name">PRETTY_NAME</td><td class="pkg-ver">Forge Linux 0.1.0 (anvil)</td></tr>
+              <tr><td class="pkg-name">HOME_URL</td><td class="pkg-role">https://forge.example/</td></tr>
+              <tr><td class="pkg-name">BUG_REPORT_URL</td><td class="pkg-role">https://forge.example/bugs</td></tr>
+              <tr><td class="pkg-name">SUPPORT_URL</td><td class="pkg-role">https://forge.example/docs</td></tr>
+              <tr><td class="pkg-name">VENDOR</td><td class="pkg-role">Your Name / Org</td></tr>
+              <tr><td class="pkg-name">ANSI_COLOR</td><td class="pkg-ver">1;32</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h4 style="margin-top:0">Naming rules</h4>
+          <ul>
+            <li><strong>ID</strong> — lowercase, no spaces (<code>forge</code>)</li>
+            <li><strong>NAME</strong> — human-facing product name</li>
+            <li><strong>Codenames</strong> — optional per release (anvil → bellows → crucible…)</li>
+            <li><strong>Avoid trademarks</strong> — do not embed Ubuntu, Red Hat, Fedora, Debian in ID/NAME</li>
+            <li><strong>Legal</strong> — branding does not relicense GPL components; keep COPYING/NOTICE</li>
+          </ul>
+          <div class="tip" style="margin-top:16px">
+            <strong>Tip</strong>
+            Pick a name that works for domain, Git org, and GPG identity. Renaming after packages ship is painful.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Single source of truth — identity kit</h3>
+    <p>Create this file on the host and copy it into the target. Every branding script sources it.</p>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> /opt/forge-brand
+<span class="c-root">root#</span> <span class="c-cmd">cat</span> > /opt/forge-brand/identity.env <span class="c-string">&lt;&lt; 'EOF'
+# === Forge Linux identity kit — edit once ===
+export DISTRO_NAME="Forge Linux"
+export DISTRO_NAME_SHORT="Forge"
+export DISTRO_ID="forge"
+export DISTRO_VERSION="0.1.0"
+export DISTRO_CODENAME="anvil"
+export DISTRO_PRETTY="${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME})"
+export DISTRO_HOME_URL="https://forge.example/"
+export DISTRO_BUG_URL="https://forge.example/bugs"
+export DISTRO_SUPPORT_URL="https://forge.example/docs"
+export DISTRO_VENDOR="Your Name or Organization"
+export DISTRO_ANSI_COLOR="1;32"
+export DISTRO_LOGO="forge-logo"
+export DISTRO_KERNEL_LOCALVERSION="-forge"
+export DISTRO_HOSTNAME="forge"
+export DISTRO_GRUB_ID="Forge"
+export DISTRO_ISO_LABEL="FORGE_0_1"
+export DISTRO_CONTACT="maintainers@forge.example"
+export DISTRO_COLOR_PRIMARY="#4ade80"
+export DISTRO_COLOR_BG="#0d0f12"
+export DISTRO_TAGLINE="Built from source. Owned by you."
+EOF</span>
+<span class="c-root">root#</span> <span class="c-cmd">source</span> /opt/forge-brand/identity.env
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> $LFS/usr/share/forge
+<span class="c-root">root#</span> <span class="c-cmd">cp</span> <span class="c-flag">-v</span> /opt/forge-brand/identity.env $LFS/usr/share/forge/</code></pre>
+
+    <h3>Brand asset checklist</h3>
+    <ul class="checklist">
+      <li><strong>Wordmark</strong> — SVG + PNG @1x/@2x, light and dark variants</li>
+      <li><strong>Mark / icon</strong> — 512×512 and 1024×1024; also 48/64/128 for menus</li>
+      <li><strong>Favicon</strong> — 32×32 and 16×16 for docs site</li>
+      <li><strong>GRUB background</strong> — 1920×1080 PNG, dark, high-contrast menu text</li>
+      <li><strong>Plymouth theme</strong> — logo + spinner (when graphical boot exists)</li>
+      <li><strong>Wallpapers</strong> — 1–3 desktop images for a future DE spin</li>
+      <li><strong>ASCII / neofetch logo</strong> — monochrome terminal art</li>
+      <li><strong>Installer art</strong> — sidebar banner for TUI/GUI installer</li>
+    </ul>
+
+    <h3>On-target brand directory layout</h3>
+    <pre><code>/usr/share/forge/
+  identity.env
+  branding/
+    logo.svg
+    logo-dark.svg
+    mark.png
+    grub-bg.png
+    plymouth/
+    wallpapers/
+  NOTICE                     <span class="c-out"># third-party license rollup</span>
+/usr/share/pixmaps/forge-logo.png
+/usr/share/backgrounds/forge/
+/etc/os-release
+/etc/forge-release</code></pre>
+
+    <div class="warn">
+      <strong>Legal note</strong>
+      Your brand wraps the system; it does not relicense the kernel or GPL userspace. Ship package COPYING files and a top-level <code>/usr/share/forge/NOTICE</code> listing Linux, glibc, GCC runtime, systemd, GRUB, and major GNU tools.
+    </div>
+  </section>
+
+  <!-- CHAPTER 21 -->
+  <section class="chapter" id="os-identity">
+    <div class="chapter-num">Chapter 21</div>
+    <h2>OS Identity Files</h2>
+    <p>These files answer “what OS is this?” for <code>hostnamectl</code>, containers, installers, and humans. Apply inside the chroot after sourcing <code>identity.env</code>.</p>
+
+    <h3>/etc/os-release (required)</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">source</span> /usr/share/forge/identity.env
+<span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/os-release <span class="c-string">&lt;&lt; EOF
+NAME="${DISTRO_NAME}"
+PRETTY_NAME="${DISTRO_PRETTY}"
+ID=${DISTRO_ID}
+ID_LIKE=lfs
+VERSION="${DISTRO_VERSION} (${DISTRO_CODENAME})"
+VERSION_ID="${DISTRO_VERSION}"
+VERSION_CODENAME=${DISTRO_CODENAME}
+BUILD_ID=$(date -u +%Y%m%d)
+HOME_URL="${DISTRO_HOME_URL}"
+DOCUMENTATION_URL="${DISTRO_SUPPORT_URL}"
+SUPPORT_URL="${DISTRO_SUPPORT_URL}"
+BUG_REPORT_URL="${DISTRO_BUG_URL}"
+PRIVACY_POLICY_URL="${DISTRO_HOME_URL}privacy"
+LOGO=${DISTRO_LOGO}
+ANSI_COLOR="${DISTRO_ANSI_COLOR}"
+VENDOR_NAME="${DISTRO_VENDOR}"
+EOF</span>
+<span class="c-root">root#</span> <span class="c-cmd">ln</span> <span class="c-flag">-sfv</span> /etc/os-release /usr/lib/os-release</code></pre>
+
+    <h3>/etc/lsb-release (compatibility)</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/lsb-release <span class="c-string">&lt;&lt; EOF
+DISTRIB_ID=${DISTRO_NAME_SHORT}
+DISTRIB_RELEASE=${DISTRO_VERSION}
+DISTRIB_CODENAME=${DISTRO_CODENAME}
+DISTRIB_DESCRIPTION="${DISTRO_PRETTY}"
+EOF</span></code></pre>
+
+    <h3>/etc/forge-release</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/forge-release <span class="c-string">&lt;&lt; EOF
+${DISTRO_PRETTY}
+Built: $(date -u +%Y-%m-%dT%H:%MZ)
+Kernel target: 7.1.5
+Toolchain: GCC 15.2.0 / glibc 2.43 / Binutils 2.46.0
+EOF</span></code></pre>
+
+    <h3>Login banners — /etc/issue &amp; MOTD</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/issue <span class="c-string">&lt;&lt; EOF
+${DISTRO_NAME} ${DISTRO_VERSION} (\\n) (\\l)
+${DISTRO_TAGLINE}
+
+EOF</span>
+<span class="c-root">root#</span> <span class="c-cmd">cp</span> <span class="c-flag">-v</span> /etc/issue /etc/issue.net
+
+<span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/motd <span class="c-string">&lt;&lt; EOF
+
+  ███████╗ ██████╗ ██████╗  ██████╗ ███████╗
+  ██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝
+  █████╗  ██║   ██║██████╔╝██║  ███╗█████╗
+  ██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝
+  ██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗
+  ╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+  ${DISTRO_PRETTY}
+  ${DISTRO_TAGLINE}
+  Docs: ${DISTRO_SUPPORT_URL}
+
+EOF</span>
+
+<span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/profile.d/forge-motd.sh <span class="c-string">&lt;&lt; 'EOF'
+if [ -n "$PS1" ] && [ -z "$FORGE_MOTD_SHOWN" ]; then
+  export FORGE_MOTD_SHOWN=1
+  echo "Kernel: $(uname -r)  |  $(uptime -p 2>/dev/null || true)"
+fi
+EOF</span></code></pre>
+
+    <h3>Hostname &amp; kernel localversion</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">echo</span> <span class="c-string">"$DISTRO_HOSTNAME"</span> > /etc/hostname
+<span class="c-root">root#</span> <span class="c-cmd">hostnamectl</span> set-hostname <span class="c-string">"$DISTRO_HOSTNAME"</span>
+<span class="c-root">root#</span> <span class="c-cmd">hostnamectl</span> set-hostname <span class="c-flag">--pretty</span> <span class="c-string">"$DISTRO_PRETTY"</span>
+
+<span class="c-out"># When building the kernel (Ch. 15):</span>
+<span class="c-root">root#</span> <span class="c-cmd">cd</span> /sources/linux-7.1.5
+<span class="c-root">root#</span> <span class="c-cmd">scripts/config</span> <span class="c-flag">--set-str</span> LOCALVERSION <span class="c-string">"-forge"</span>
+<span class="c-root">root#</span> <span class="c-cmd">make</span> <span class="c-flag">-j$(nproc)</span> && <span class="c-cmd">make</span> modules_install
+<span class="c-root">root#</span> <span class="c-cmd">cp</span> <span class="c-flag">-iv</span> arch/x86/boot/bzImage /boot/vmlinuz-7.1.5-forge
+<span class="c-out"># uname -r → 7.1.5-forge</span></code></pre>
+
+    <div class="note">
+      <strong>Containers</strong>
+      OCI labels should mirror os-release: <code>org.opencontainers.image.title</code>, <code>.version</code>, <code>.vendor</code>, <code>.source</code>.
+    </div>
+  </section>
+
+  <!-- CHAPTER 22 -->
+  <section class="chapter" id="visual-brand">
+    <div class="chapter-num">Chapter 22</div>
+    <h2>Visual Branding</h2>
+    <p>Make boot and login intentional: GRUB theme, console, optional Plymouth, terminal logos.</p>
+
+    <h3>GRUB theme + branded menu</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">source</span> /usr/share/forge/identity.env
+<span class="c-root">root#</span> <span class="c-cmd">mkdir</span> <span class="c-flag">-pv</span> /boot/grub/themes/forge
+<span class="c-root">root#</span> <span class="c-cmd">cp</span> /usr/share/forge/branding/grub-bg.png /boot/grub/themes/forge/background.png
+
+<span class="c-root">root#</span> <span class="c-cmd">cat</span> > /boot/grub/themes/forge/theme.txt <span class="c-string">&lt;&lt; 'EOF'
+desktop-image: "background.png"
+title-text: "Forge Linux"
+title-color: "#4ade80"
+message-color: "#e8edf5"
++ boot_menu {
+  left = 15%; width = 70%; top = 30%; height = 40%
+  item_color = "#c8d0e0"
+  selected_item_color = "#0d0f12"
+  item_height = 28; item_padding = 8; item_spacing = 6
+}
+EOF</span>
+
+<span class="c-root">root#</span> <span class="c-var">ROOT_UUID</span>=$(blkid -s UUID -o value /dev/sdb3)
+<span class="c-root">root#</span> <span class="c-cmd">cat</span> > /boot/grub/grub.cfg <span class="c-string">&lt;&lt; EOF
+set default=0
+set timeout=5
+set gfxmode=auto
+insmod all_video
+insmod gfxterm
+insmod png
+insmod part_gpt
+insmod ext2
+terminal_output gfxterm
+set theme=/boot/grub/themes/forge/theme.txt
+export theme
+
+menuentry "${DISTRO_NAME} ${DISTRO_VERSION} — Linux 7.1.5" {
+    linux /boot/vmlinuz-7.1.5-forge root=UUID=${ROOT_UUID} rw quiet
+}
+menuentry "${DISTRO_NAME} (recovery)" {
+    linux /boot/vmlinuz-7.1.5-forge root=UUID=${ROOT_UUID} rw single
+}
+EOF</span></code></pre>
+
+    <h3>Plymouth (graphical splash)</h3>
+    <p>Build Plymouth via BLFS when DRM/KMS + initramfs exist. Theme skeleton:</p>
+    <pre><code>/usr/share/plymouth/themes/forge/forge.plymouth
+[Plymouth Theme]
+Name=Forge
+Description=Forge Linux boot splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/forge
+ScriptFile=/usr/share/plymouth/themes/forge/forge.script</code></pre>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">plymouth-set-default-theme</span> <span class="c-flag">-R</span> forge
+<span class="c-out"># kernel cmdline: quiet splash — rebuild initramfs after install</span></code></pre>
+
+    <h3>fastfetch / neofetch ASCII</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /usr/share/forge/ascii.txt <span class="c-string">&lt;&lt; 'EOF'
+      #####
+     ##   ##     Forge Linux
+     ##         Built from source
+     ##  ###
+     ##   ##
+      #####
+EOF</span>
+<span class="c-out"># fastfetch -l /usr/share/forge/ascii.txt</span></code></pre>
+
+    <h3>forge-apply-brand helper</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /usr/sbin/forge-apply-brand <span class="c-string">&lt;&lt; 'EOF'
+#!/bin/bash
+set -euo pipefail
+. /usr/share/forge/identity.env
+# regenerate os-release, issue, motd, hostname from identity.env (Ch. 21)
+echo "$DISTRO_HOSTNAME" > /etc/hostname
+echo "Applied ${DISTRO_PRETTY}"
+EOF</span>
+<span class="c-root">root#</span> <span class="c-cmd">chmod</span> 755 /usr/sbin/forge-apply-brand</code></pre>
+  </section>
+
+  <!-- CHAPTER 23 -->
+  <section class="chapter" id="pkg-mgr">
+    <div class="chapter-num">Chapter 23</div>
+    <h2>Package Manager — From Tarballs to a Distro</h2>
+    <p>Without packages you have a golden image you cannot update cleanly. Choose early:</p>
+
+    <div class="two-col">
+      <div class="mini-card">
+        <h4>A. Scripted ports tree</h4>
+        <p>Per-package build scripts + manifest. Best learning path; start here for Forge 0.1.</p>
+      </div>
+      <div class="mini-card">
+        <h4>B. Binary packages</h4>
+        <p>Adopt <strong>pacman</strong>, <strong>dpkg/apt</strong>, or <strong>rpm/dnf</strong>. Real distro UX; more work.</p>
+      </div>
+      <div class="mini-card">
+        <h4>C. Image-based</h4>
+        <p>OSTree / A/B images. Excellent for appliances; different model than classic LFS.</p>
+      </div>
+      <div class="mini-card">
+        <h4>D. Hybrid</h4>
+        <p>Immutable base + Flatpak/Nix for apps. Pragmatic for desktops.</p>
+      </div>
+    </div>
+
+    <h3>Forge ports tree layout</h3>
+    <pre><code>/var/lib/forge/ports/
+  toolchain/gcc/Pkgfile
+  base/bash/Pkgfile
+  base/coreutils/Pkgfile
+  net/openssh/Pkgfile
+  meta/base-system/Pkgfile
+/var/cache/forge/sources/
+/var/cache/forge/packages/</code></pre>
+
+    <h3>Minimal Pkgfile</h3>
+    <pre><code>name=hello
+version=2.12.2
+release=1
+source=(https://ftp.gnu.org/gnu/hello/hello-${version}.tar.gz)
+build() {
+  cd "${name}-${version}"
+  ./configure --prefix=/usr
+  make -j$(nproc)
+}
+package() {
+  make DESTDIR="$pkgdir" install
+}</code></pre>
+
+    <h3>forgepkg sketch</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /usr/sbin/forgepkg <span class="c-string">&lt;&lt; 'EOF'
+#!/bin/bash
+# Educational package helper — build | install | list
+set -euo pipefail
+PORTS=${PORTS:-/var/lib/forge/ports}
+PKGDB=/var/lib/forge/db
+CACHEDIR=/var/cache/forge/packages
+mkdir -p "$PKGDB" "$CACHEDIR"
+cmd=${1:-}; shift || true
+case "$cmd" in
+  build)  echo "Build port $1 (download, build(), package to $CACHEDIR)";;
+  install) echo "Install package file $1; record in $PKGDB";;
+  list)   cat "$PKGDB/installed" 2>/dev/null || true;;
+  *) echo "Usage: forgepkg {build|install|list}"; exit 1;;
+esac
+EOF</span>
+<span class="c-root">root#</span> <span class="c-cmd">chmod</span> 755 /usr/sbin/forgepkg</code></pre>
+
+    <div class="warn">
+      <strong>Production</strong>
+      Do not ship a half-finished solver. For binary repos, port <strong>pacman</strong>+makepkg, bootstrap rpm/dnf, or learn from Alpine abuild. Your edge is curation and branding.
+    </div>
+
+    <h3>Signed repository layout</h3>
+    <pre><code>https://repo.forge.example/
+  forge/os/x86_64/
+    forge-core.db
+    forge-core.db.sig
+    bash-5.3-1-x86_64.pkg.tar.zst
+    bash-5.3-1-x86_64.pkg.tar.zst.sig
+  iso/
+    forge-0.1.0-anvil-x86_64.iso
+    SHA256SUMS
+    SHA256SUMS.asc</code></pre>
+
+    <h3>If you adopt pacman</h3>
+    <ol class="steps">
+      <li>Build deps (openssl, curl, libarchive, gpgme) then pacman</li>
+      <li>Configure <code>/etc/pacman.conf</code> with <code>[forge-core]</code> / <code>[forge-extra]</code></li>
+      <li><code>repo-add forge-core.db.tar.gz *.pkg.tar.zst</code></li>
+      <li>Host over HTTPS; sign packages with distro GPG key (Ch. 27)</li>
+      <li>Document <code>pacman -Syu</code> as the user upgrade path</li>
+    </ol>
+  </section>
+
+  <!-- CHAPTER 24 -->
+  <section class="chapter" id="userspace">
+    <div class="chapter-num">Chapter 24</div>
+    <h2>Userspace Stack — Make It Usable</h2>
+    <p>After first boot you have a console OS. Prioritize by persona.</p>
+
+    <h3>Tier 0 — Always (server / appliance base)</h3>
+    <table class="pkg-table">
+      <thead><tr><th>Package</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td class="pkg-name">iproute2</td><td class="pkg-role">ip, ss — real network control</td></tr>
+        <tr><td class="pkg-name">OpenSSH</td><td class="pkg-role">Remote admin</td></tr>
+        <tr><td class="pkg-name">curl / wget</td><td class="pkg-role">Fetch sources and updates</td></tr>
+        <tr><td class="pkg-name">ca-certificates</td><td class="pkg-role">TLS trust store</td></tr>
+        <tr><td class="pkg-name">vim or nano</td><td class="pkg-role">Edit configs</td></tr>
+        <tr><td class="pkg-name">sudo</td><td class="pkg-role">Least-privilege admin user</td></tr>
+        <tr><td class="pkg-name">chrony / timesyncd</td><td class="pkg-role">Correct clock</td></tr>
+        <tr><td class="pkg-name">logrotate</td><td class="pkg-role">Log hygiene</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Tier 1 — Developer box</h3>
+    <p>git, strace, gdb, lsof, htop/btop, python3, tmux, man-db.</p>
+
+    <h3>Tier 2 — Desktop (optional, BLFS)</h3>
+    <ol class="steps">
+      <li>DRM/Mesa + libinput + Xorg or Wayland (Sway/Weston)</li>
+      <li>Fonts + fontconfig</li>
+      <li>PipeWire for audio</li>
+      <li>XFCE (lighter) or GNOME/KDE</li>
+      <li>Display manager: greetd, lightdm, or gdm</li>
+      <li>Forge wallpapers + theme tokens from brand colors</li>
+    </ol>
+
+    <h3>Admin user</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">useradd</span> <span class="c-flag">-m</span> <span class="c-flag">-s</span> /bin/bash <span class="c-flag">-c</span> <span class="c-string">"Forge Admin"</span> forgeuser
+<span class="c-root">root#</span> <span class="c-cmd">passwd</span> forgeuser
+<span class="c-root">root#</span> <span class="c-cmd">usermod</span> <span class="c-flag">-aG</span> wheel forgeuser</code></pre>
+
+    <h3>nftables baseline</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">nft</span> add table inet filter
+<span class="c-root">root#</span> <span class="c-cmd">nft</span> add chain inet filter input '{ type filter hook input priority 0; policy drop; }'
+<span class="c-root">root#</span> <span class="c-cmd">nft</span> add rule inet filter input ct state established,related accept
+<span class="c-root">root#</span> <span class="c-cmd">nft</span> add rule inet filter input iif lo accept
+<span class="c-root">root#</span> <span class="c-cmd">nft</span> add rule inet filter input tcp dport 22 accept</code></pre>
+
+    <div class="danger">
+      <strong>Security</strong>
+      Branding ≠ security. Disable root SSH passwords, track CVEs for your package set, and document a security contact in os-release / website.
+    </div>
+  </section>
+
+  <!-- CHAPTER 25 -->
+  <section class="chapter" id="iso">
+    <div class="chapter-num">Chapter 25</div>
+    <h2>Live ISO &amp; Disk Images</h2>
+    <p>Users install from images. Plan to ship a live ISO, a raw/qcow2 disk image, and optionally an OCI base image from the same rootfs.</p>
+
+    <h3>Host tooling (Fedora)</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">dnf install</span> xorriso mtools squashfs-tools dosfstools \
+  grub2-tools grub2-tools-extra grub2-efi-x64-modules \
+  syslinux isomd5sum qemu-img edk2-ovmf</code></pre>
+
+    <h3>Pipeline</h3>
+    <ol class="steps">
+      <li>Export clean rootfs (exclude /sources, /tools, caches)</li>
+      <li>Build initramfs with live/overlay hooks</li>
+      <li><code>mksquashfs</code> rootfs → <code>LiveOS/squashfs.img</code></li>
+      <li>Stage ISO tree: kernel, initrd, GRUB EFI + BIOS, brand assets</li>
+      <li>Hybrid ISO via xorriso</li>
+      <li>SHA256 + GPG sign</li>
+    </ol>
+
+    <h3>Export rootfs</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">export</span> <span class="c-var">LFS</span>=/mnt/lfs
+<span class="c-root">root#</span> <span class="c-cmd">tar</span> <span class="c-flag">-C</span> $LFS \
+  <span class="c-flag">--exclude</span>=./sources <span class="c-flag">--exclude</span>=./tools \
+  <span class="c-flag">-cJf</span> /var/tmp/forge-rootfs.tar.xz .</code></pre>
+
+    <h3>ISO skeleton</h3>
+    <pre><code>/var/tmp/forge-iso/
+  EFI/BOOT/BOOTX64.EFI
+  boot/grub/grub.cfg
+  boot/grub/themes/forge/
+  images/pxeboot/vmlinuz
+  images/pxeboot/initrd.img
+  LiveOS/squashfs.img
+  LICENSE
+  README.txt</code></pre>
+
+    <h3>xorriso (conceptual)</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">source</span> /opt/forge-brand/identity.env
+<span class="c-root">root#</span> <span class="c-cmd">xorriso</span> <span class="c-flag">-as</span> mkisofs \
+  <span class="c-flag">-iso-level</span> 3 \
+  <span class="c-flag">-full-iso9660-filenames</span> \
+  <span class="c-flag">-volid</span> "$DISTRO_ISO_LABEL" \
+  <span class="c-flag">-appid</span> "$DISTRO_NAME" \
+  <span class="c-flag">-publisher</span> "$DISTRO_VENDOR" \
+  <span class="c-flag">-o</span> /var/tmp/${DISTRO_ID}-${DISTRO_VERSION}-${DISTRO_CODENAME}-x86_64.iso \
+  /var/tmp/forge-iso/
+<span class="c-out"># Add eltorito BIOS + EFI alternate boot images per your GRUB embed setup
+# Test: qemu-system-x86_64 -m 2048 -cdrom …  and UEFI with OVMF</span></code></pre>
+
+    <h3>VM / cloud image</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">qemu-img</span> create <span class="c-flag">-f</span> raw forge-0.1.0.img 8G
+<span class="c-root">root#</span> <span class="c-cmd">losetup</span> <span class="c-flag">-fP</span> forge-0.1.0.img
+<span class="c-out"># partition, mkfs, rsync rootfs, grub-install, forge-apply-brand
+# qemu-img convert -c -O qcow2 forge-0.1.0.img forge-0.1.0.qcow2</span></code></pre>
+
+    <h3>Checksums</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cd</span> /var/tmp
+<span class="c-root">root#</span> <span class="c-cmd">sha256sum</span> forge-*.iso forge-*.qcow2 > SHA256SUMS
+<span class="c-root">root#</span> <span class="c-cmd">gpg</span> <span class="c-flag">--local-user</span> release@forge.example \
+  <span class="c-flag">--detach-sign</span> <span class="c-flag">--armor</span> SHA256SUMS</code></pre>
+  </section>
+
+  <!-- CHAPTER 26 -->
+  <section class="chapter" id="installer">
+    <div class="chapter-num">Chapter 26</div>
+    <h2>Installer</h2>
+    <p>An installer turns a rootfs into a product people can deploy without reading build chapters.</p>
+
+    <div class="two-col">
+      <div class="mini-card">
+        <h4>1. Shell installer</h4>
+        <p><code>forge-install</code> TUI: disk → partition → unpack → GRUB → password. Perfect for 0.1.</p>
+      </div>
+      <div class="mini-card">
+        <h4>2. Calamares</h4>
+        <p>Qt GUI + Forge branding pack — fastest polished installer path.</p>
+      </div>
+      <div class="mini-card">
+        <h4>3. Custom GUI</h4>
+        <p>Anaconda/Subiquity-class effort. Only if installer UX is the product.</p>
+      </div>
+      <div class="mini-card">
+        <h4>4. Image flash</h4>
+        <p>No installer — <code>dd</code> a preseeded image (appliances, SBCs, cloud).</p>
+      </div>
+    </div>
+
+    <h3>Installer flow</h3>
+    <ol class="steps">
+      <li>List block devices; destructive confirm</li>
+      <li>GPT: ESP 512M, boot 1G, root rest (match Ch. 03)</li>
+      <li>Format + mount at <code>/mnt/target</code></li>
+      <li>Unpack squashfs/rootfs</li>
+      <li>chroot: <code>forge-apply-brand</code>, root password, locale, timezone</li>
+      <li>grub-install + UUID-based grub.cfg</li>
+      <li>Unmount; reboot</li>
+    </ol>
+
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /usr/sbin/forge-install <span class="c-string">&lt;&lt; 'EOF'
+#!/bin/bash
+set -euo pipefail
+. /usr/share/forge/identity.env 2>/dev/null || true
+echo "=== ${DISTRO_NAME:-Forge Linux} installer ==="
+lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS
+read -r -p "Target disk (e.g. /dev/vda): " DISK
+read -r -p "ERASE $DISK and install? type YES: " CONFIRM
+[[ "$CONFIRM" == "YES" ]] || exit 1
+# partition (sfdisk/parted), mkfs, rsync rootfs, grub, passwords …
+echo "Install complete. Reboot into ${DISTRO_PRETTY:-Forge}."
+EOF</span>
+<span class="c-root">root#</span> <span class="c-cmd">chmod</span> 755 /usr/sbin/forge-install</code></pre>
+
+    <h3>Calamares branding paths</h3>
+    <pre><code>/etc/calamares/branding/forge/
+  branding.desc
+  stylesheet.qss
+  logo.png
+  welcome.png</code></pre>
+
+    <h3>First-boot unit (cloud images)</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">cat</span> > /etc/systemd/system/forge-firstboot.service <span class="c-string">&lt;&lt; 'EOF'
+[Unit]
+Description=Forge Linux first boot
+ConditionPathExists=!/var/lib/forge/firstboot-done
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/forge-firstboot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF</span>
+<span class="c-root">root#</span> <span class="c-cmd">systemctl</span> enable forge-firstboot.service</code></pre>
+    <p>First-boot expands disks, regenerates machine-id, injects SSH keys (cloud-init), sets hostname from metadata.</p>
+  </section>
+
+  <!-- CHAPTER 27 -->
+  <section class="chapter" id="release">
+    <div class="chapter-num">Chapter 27</div>
+    <h2>Release Engineering</h2>
+    <p>Shipping repeatedly is what makes a distro real.</p>
+
+    <h3>Versioning</h3>
+    <table class="pkg-table">
+      <thead><tr><th>Scheme</th><th>Example</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td class="pkg-name">SemVer + codename</td><td class="pkg-ver">0.1.0 (anvil)</td><td class="pkg-role">Forge default</td></tr>
+        <tr><td class="pkg-name">CalVer</td><td class="pkg-ver">2026.08</td><td class="pkg-role">Monthly snapshots / rolling</td></tr>
+        <tr><td class="pkg-name">Point release</td><td class="pkg-ver">1.0 → 1.1</td><td class="pkg-role">Stable series with backports</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Release checklist</h3>
+    <ul class="checklist">
+      <li>Freeze ports tree; git tag <code>v0.1.0</code></li>
+      <li>Rebuild packages/images; pin SHA256 sources</li>
+      <li>QEMU smoke: BIOS + UEFI boot, login, network, package install</li>
+      <li>Publish ISO + qcow2 + SBOM; SHA256SUMS + GPG</li>
+      <li>Release notes: toolchain, kernel, known issues, upgrade path</li>
+      <li>Announce with verification instructions</li>
+    </ul>
+
+    <h3>Distro signing key</h3>
+    <pre><code><span class="c-root">root#</span> <span class="c-cmd">gpg</span> <span class="c-flag">--full-generate-key</span>
+<span class="c-out"># Identity: Forge Linux Release &lt;release@forge.example&gt;</span>
+<span class="c-root">root#</span> <span class="c-cmd">gpg</span> <span class="c-flag">--export</span> <span class="c-flag">--armor</span> release@forge.example \
+  > forge-release.pubkey.asc
+<span class="c-out"># Publish on HTTPS + fingerprint in every ISO README</span></code></pre>
+
+    <h3>Release notes template</h3>
+    <pre><code># Forge Linux 0.1.0 (anvil) — 2026-08-03
+
+## Highlights
+- First public release
+- Linux 7.1.5, GCC 15.2, glibc 2.43, systemd 259.1
+- Branded live ISO + raw image
+
+## Known issues
+- No GUI in base ISO
+- forgepkg is educational — prefer ports scripts
+
+## Verify
+sha256sum -c SHA256SUMS
+gpg --verify SHA256SUMS.asc
+
+## Upgrade
+Clean install recommended for 0.x</code></pre>
+
+    <h3>CI outline</h3>
+    <pre><code><span class="c-out"># on tag v*:
+#   build-rootfs → build-iso → qemu-smoke → sign → publish</span></code></pre>
+
+    <h3>SBOM / auditability</h3>
+    <ul>
+      <li>Pin tarball versions + hashes in ports tree</li>
+      <li>Emit CycloneDX or SPDX for each release</li>
+      <li>Set SOURCE_DATE_EPOCH where tooling allows</li>
+      <li>Keep <code>sources.lock</code> next to the git tag</li>
+    </ul>
+  </section>
+
+  <!-- CHAPTER 28 -->
+  <section class="chapter" id="roadmap">
+    <div class="chapter-num">Chapter 28</div>
+    <h2>Distro Roadmap — Beyond the Guide</h2>
+
+    <table class="pkg-table">
+      <thead><tr><th>Release</th><th>Codename</th><th>Goals</th></tr></thead>
+      <tbody>
+        <tr><td class="pkg-name">0.1</td><td class="pkg-ver">anvil</td><td class="pkg-role">Branded bootable system, SSH, docs, ISO alpha</td></tr>
+        <tr><td class="pkg-name">0.2</td><td class="pkg-ver">bellows</td><td class="pkg-role">Real package manager + signed repo + installer beta</td></tr>
+        <tr><td class="pkg-name">0.3</td><td class="pkg-ver">crucible</td><td class="pkg-role">Desktop spin and/or server hardening profile</td></tr>
+        <tr><td class="pkg-name">1.0</td><td class="pkg-ver">hammer</td><td class="pkg-role">Stable promise, LTS kernel option, security policy</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Product decisions</h3>
+    <ul>
+      <li><strong>Audience</strong> — learners, homelab, appliances, secure workstations?</li>
+      <li><strong>Update model</strong> — rolling, point releases, or image A/B?</li>
+      <li><strong>Architectures</strong> — x86_64 first; aarch64 when CI exists</li>
+      <li><strong>Governance</strong> — solo vs community; CoC; how packages enter the set</li>
+    </ul>
+
+    <h3>Docs site (brand surface)</h3>
+    <ul>
+      <li><code>/</code> — product story + downloads</li>
+      <li><code>/docs/install</code> — verify ISO + install</li>
+      <li><code>/docs/build</code> — this guide</li>
+      <li><code>/security</code> — vuln report + PGP</li>
+      <li><code>/brand</code> — logo kit (SVG/PNG)</li>
+    </ul>
+
+    <h3>Master checklist — “I have a distro”</h3>
+    <ul class="checklist">
+      <li>Boots without the build host</li>
+      <li><code>/etc/os-release</code> and <code>hostnamectl</code> show my name</li>
+      <li>GRUB + login banners match brand</li>
+      <li>Users can install/flash without reading toolchain chapters</li>
+      <li>Documented update or rebuild path</li>
+      <li>Artifacts checksummed and signed</li>
+      <li>Licenses + NOTICE complete</li>
+      <li>Rebuildable from a git tag</li>
+    </ul>
+
+    <div class="tip">
+      <strong>You own this</strong>
+      Rename Forge → your mark, change colors, point HOME_URL at your domain. Chapters 00–19 are the engineering spine; 20–28 are the product.
+    </div>
+
+    <div class="brand-card">
+      <div class="brand-lockup">
+        <div class="brand-mark">F</div>
+        <div>
+          <div class="brand-name">Forge <span>Linux</span></div>
+          <div class="brand-tagline">END OF GUIDE · START OF YOUR DISTRO</div>
+        </div>
+      </div>
+      <p style="position:relative;margin:0;color:#9aa3b8;font-size:15px">
+        Companions:
+        <a href="https://www.linuxfromscratch.org/lfs/">LFS</a> ·
+        <a href="https://www.linuxfromscratch.org/blfs/">BLFS</a> ·
+        <a href="https://www.freedesktop.org/software/systemd/man/latest/os-release.html">os-release(5)</a> ·
+        <a href="https://www.kernel.org/">kernel.org</a>
+      </p>
+    </div>
+  </section>
+
+
+</main>
+
+<script>
+// Sidebar active state tracking
+const sections = document.querySelectorAll('.chapter');
+const navItems = document.querySelectorAll('.nav-item');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.getAttribute('id');
+      navItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('href') === '#' + id) {
+          item.classList.add('active');
+        }
+      });
+    }
+  });
+}, { threshold: 0.15 });
+
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
